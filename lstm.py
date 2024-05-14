@@ -3,8 +3,8 @@ from tqdm import tqdm
 import numpy as np
 
 ##### Data #####
-dataset_path = "the_sopranos_pilot.txt"
-with open('the_sopranos_pilot.txt', 'r') as file:
+dataset_path = "the_sopranos_pilot_small.txt"
+with open(dataset_path, 'r') as file:
     data = file.read()
 
 data = data.lower()
@@ -210,7 +210,7 @@ class LSTM:
         print(f'Accuracy: {round(accuracy * 100 / len(inputs), 2)}%')
         
 # Initialize Network
-hidden_size = 25
+hidden_size = 64
 
 lstm = LSTM(input_size = char_size + hidden_size, hidden_size = hidden_size, output_size = char_size, num_epochs = 1_000, learning_rate = 0.05)
 
