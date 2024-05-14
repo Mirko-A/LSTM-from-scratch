@@ -1,221 +1,232 @@
-##### Imports #####
-from tqdm import tqdm
 import numpy as np
+import matplotlib.pyplot as plt
+import tqdm
 
-##### Data #####
-dataset_path = "the_sopranos_pilot_small.txt"
+dataset_path = "datasets/shakespeare/tiny_shakespeare_small.txt"
 with open(dataset_path, 'r') as file:
     data = file.read()
 
-data = data.lower()
+print(f"Data size: {len(data)}")
 
-chars = set(data)
+vocab = set(data)
+vocab_size = len(vocab)
 
-data_size, char_size = len(data), len(chars)
+print(f"Vocab size = {vocab_size}")
+print(f"Vocab      = {vocab}")
 
-print(f'Data size: {data_size}, Char Size: {char_size}')
+char_to_idx = {c:i for i, c in enumerate(vocab)}
+idx_to_char = {i:c for i, c in enumerate(vocab)}
 
-char_to_idx = {c:i for i, c in enumerate(chars)}
-idx_to_char = {i:c for i, c in enumerate(chars)}
+a_idx = char_to_idx['a']
+print(f"a-{a_idx}, {a_idx}-{idx_to_char[a_idx]}")
 
-train_X, train_y = data[:-1], data[1:]
+data_size = len(data)
+X_train = data[:-1]
+Y_train = data[1:]
 
-##### Helper Functions #####
-def oneHotEncode(text):
-    output = np.zeros((char_size, 1))
-    output[char_to_idx[text]] = 1
+def tanh(x: np.ndarray) -> np.ndarray:
+    return np.tanh(x)
+def dtanh(x: np.ndarray) -> np.ndarray:
+    return 1 - np.tanh(x)**2
 
-    return output
+def sigmoid(x: np.ndarray) -> np.ndarray:
+    return 1/(1+np.exp(-x))
+def dsigmoid(x: np.ndarray) -> np.ndarray:
+    return sigmoid(x)*(1-sigmoid(x))
 
-# Xavier Normalized Initialization
-def initWeights(input_size, output_size):
-    return np.random.uniform(-1, 1, (output_size, input_size)) * np.sqrt(6 / (input_size + output_size))
+def softmax(x: np.ndarray) -> np.ndarray:
+    exp = np.exp(x)
+    return exp/np.sum(exp)
 
-##### Activation Functions #####
-def sigmoid(input, derivative = False):
-    if derivative:
-        return input * (1 - input)
+def one_hot_encode(c: str) -> np.ndarray:
+    one_hot = np.zeros((vocab_size, 1))
+    one_hot[char_to_idx[c]] = 1
     
-    return 1 / (1 + np.exp(-input))
+    return one_hot
 
-def tanh(input, derivative = False):
-    if derivative:
-        return 1 - input ** 2
-    
-    return np.tanh(input)
+def init_weights(input_size: int, output_size: int) -> np.ndarray:
+    # Normalized Xavier initialization
+    return np.random.uniform(-1, 1, (output_size, input_size)) * np.sqrt(6/(input_size + output_size))
 
-def softmax(input):
-    return np.exp(input) / np.sum(np.exp(input))
-
-##### Long Short-Term Memory Network Class #####
 class LSTM:
-    def __init__(self, input_size, hidden_size, output_size, num_epochs, learning_rate):
+    def __init__(self, input_size: int, hidden_size: int, output_size: int, learning_rate: float = 1e-3):
         # Hyperparameters
-        self.learning_rate = learning_rate
+        self.input_size = input_size
         self.hidden_size = hidden_size
-        self.num_epochs = num_epochs
+        self.output_size = output_size
+        self.learning_rate = learning_rate
 
-        # Forget Gate
-        self.wf = initWeights(input_size, hidden_size)
-        self.bf = np.zeros((hidden_size, 1))
+        # Forget gate weights
+        self.W_f = init_weights(input_size, self.hidden_size)
+        self.b_f = np.zeros((self.hidden_size, 1))
 
-        # Input Gate
-        self.wi = initWeights(input_size, hidden_size)
-        self.bi = np.zeros((hidden_size, 1))
+        # Input gate weights
+        self.W_i = init_weights(input_size, self.hidden_size)
+        self.b_i = np.zeros((self.hidden_size, 1))
 
-        # Candidate Gate
-        self.wc = initWeights(input_size, hidden_size)
-        self.bc = np.zeros((hidden_size, 1))
+        # Candidate gate weights
+        self.W_c = init_weights(input_size, self.hidden_size)
+        self.b_c = np.zeros((self.hidden_size, 1))
 
-        # Output Gate
-        self.wo = initWeights(input_size, hidden_size)
-        self.bo = np.zeros((hidden_size, 1))
+        # Output gate weights
+        self.W_o = init_weights(input_size, self.hidden_size)
+        self.b_o = np.zeros((self.hidden_size, 1))
 
-        # Final Gate
-        self.wy = initWeights(hidden_size, output_size)
-        self.by = np.zeros((output_size, 1))
+        # Final gate weights
+        self.W_y = init_weights(self.hidden_size, output_size)
+        self.b_y = np.zeros((output_size, 1))
+        
+        # Network cache
+        self.concat_inputs: dict[int, np.ndarray] = {}
 
-    # Reset Network Memory
-    def reset(self):
+        self.hidden_states: dict[int, np.ndarray] = {-1: np.zeros((self.hidden_size, 1))}
+        self.cell_states: dict[int, np.ndarray] = {-1: np.zeros((self.hidden_size, 1))}
+
+        self.forget_gates: dict[int, np.ndarray] = {}
+        self.input_gates: dict[int, np.ndarray] = {}
+        self.candidate_gates: dict[int, np.ndarray] = {}
+        self.output_gates: dict[int, np.ndarray] = {}
+        self.activation_outputs: dict[int, np.ndarray] = {}
+        self.outputs: dict[int, np.ndarray] = {}
+        
+    def reset_cache(self):
         self.concat_inputs = {}
-
-        self.hidden_states = {-1:np.zeros((self.hidden_size, 1))}
-        self.cell_states = {-1:np.zeros((self.hidden_size, 1))}
-
-        self.activation_outputs = {}
-        self.candidate_gates = {}
-        self.output_gates = {}
+        
+        self.hidden_states = {-1: np.zeros((self.hidden_size, 1))}
+        self.cell_states = {-1: np.zeros((self.hidden_size, 1))}
+        
         self.forget_gates = {}
         self.input_gates = {}
+        self.candidate_gates = {}
+        self.output_gates = {}
+        self.activation_outputs = {}
         self.outputs = {}
-
-    # Forward Propogation
-    def forward(self, inputs):
-        self.reset()
-
+        
+    def forward(self, inputs: list[np.ndarray]) -> list[np.ndarray]:
+        self.reset_cache()
+        
         outputs = []
-        for q in range(len(inputs)):
-            self.concat_inputs[q] = np.concatenate((self.hidden_states[q - 1], inputs[q]))
-
-            self.forget_gates[q] = sigmoid(np.dot(self.wf, self.concat_inputs[q]) + self.bf)
-            self.input_gates[q] = sigmoid(np.dot(self.wi, self.concat_inputs[q]) + self.bi)
-            self.candidate_gates[q] = tanh(np.dot(self.wc, self.concat_inputs[q]) + self.bc)
-            self.output_gates[q] = sigmoid(np.dot(self.wo, self.concat_inputs[q]) + self.bo)
-
-            self.cell_states[q] = self.forget_gates[q] * self.cell_states[q - 1] + self.input_gates[q] * self.candidate_gates[q]
-            self.hidden_states[q] = self.output_gates[q] * tanh(self.cell_states[q])
-
-            outputs += [np.dot(self.wy, self.hidden_states[q]) + self.by]
-
-        return outputs
-
-    # Backward Propogation
-    def backward(self, errors, inputs):
-        d_wf, d_bf = 0, 0
-        d_wi, d_bi = 0, 0
-        d_wc, d_bc = 0, 0
-        d_wo, d_bo = 0, 0
-        d_wy, d_by = 0, 0
-
-        dh_next, dc_next = np.zeros_like(self.hidden_states[0]), np.zeros_like(self.cell_states[0])
-        for q in reversed(range(len(inputs))):
-            error = errors[q]
-
-            # Final Gate Weights and Biases Errors
-            d_wy += np.dot(error, self.hidden_states[q].T)
-            d_by += error
-
-            # Hidden State Error
-            d_hs = np.dot(self.wy.T, error) + dh_next
-
-            # Output Gate Weights and Biases Errors
-            d_o = tanh(self.cell_states[q]) * d_hs * sigmoid(self.output_gates[q], derivative = True)
-            d_wo += np.dot(d_o, inputs[q].T)
-            d_bo += d_o
-
-            # Cell State Error
-            d_cs = tanh(tanh(self.cell_states[q]), derivative = True) * self.output_gates[q] * d_hs + dc_next
-
-            # Forget Gate Weights and Biases Errors
-            d_f = d_cs * self.cell_states[q - 1] * sigmoid(self.forget_gates[q], derivative = True)
-            d_wf += np.dot(d_f, inputs[q].T)
-            d_bf += d_f
-
-            # Input Gate Weights and Biases Errors
-            d_i = d_cs * self.candidate_gates[q] * sigmoid(self.input_gates[q], derivative = True)
-            d_wi += np.dot(d_i, inputs[q].T)
-            d_bi += d_i
+        for t in range(len(inputs)):
+            self.concat_inputs[t] = np.concatenate((self.hidden_states[t-1], inputs[t]))
             
-            # Candidate Gate Weights and Biases Errors
-            d_c = d_cs * self.input_gates[q] * tanh(self.candidate_gates[q], derivative = True)
-            d_wc += np.dot(d_c, inputs[q].T)
-            d_bc += d_c
-
-            # Concatenated Input Error (Sum of Error at Each Gate!)
-            d_z = np.dot(self.wf.T, d_f) + np.dot(self.wi.T, d_i) + np.dot(self.wc.T, d_c) + np.dot(self.wo.T, d_o)
-
-            # Error of Hidden State and Cell State at Next Time Step
-            dh_next = d_z[:self.hidden_size, :]
-            dc_next = self.forget_gates[q] * d_cs
-
-        for d_ in (d_wf, d_bf, d_wi, d_bi, d_wc, d_bc, d_wo, d_bo, d_wy, d_by):
-            np.clip(d_, -1, 1, out = d_)
-
-        self.wf += d_wf * self.learning_rate
-        self.bf += d_bf * self.learning_rate
-
-        self.wi += d_wi * self.learning_rate
-        self.bi += d_bi * self.learning_rate
-
-        self.wc += d_wc * self.learning_rate
-        self.bc += d_bc * self.learning_rate
-
-        self.wo += d_wo * self.learning_rate
-        self.bo += d_bo * self.learning_rate
-
-        self.wy += d_wy * self.learning_rate
-        self.by += d_by * self.learning_rate
-
-    # Train
-    def train(self, inputs, labels):
-        inputs = [oneHotEncode(input) for input in inputs]
-
-        for _ in tqdm(range(self.num_epochs)):
-            predictions = self.forward(inputs)
-
+            self.forget_gates[t] = np.dot(self.W_f, self.concat_inputs[t]) + self.b_f
+            self.input_gates[t] = np.dot(self.W_i, self.concat_inputs[t]) + self.b_i
+            self.candidate_gates[t] = np.dot(self.W_c, self.concat_inputs[t]) + self.b_c
+            self.output_gates[t] = np.dot(self.W_o, self.concat_inputs[t]) + self.b_o
+            
+            fga = sigmoid(self.forget_gates[t])
+            iga = sigmoid(self.input_gates[t])
+            cga = tanh(self.candidate_gates[t])
+            oga = sigmoid(self.output_gates[t])
+            
+            self.cell_states[t] = fga * self.cell_states[t-1] + iga * cga
+            self.hidden_states[t] = oga * tanh(self.cell_states[t])
+            
+            outputs += [np.dot(self.W_y, self.hidden_states[t]) + self.b_y]
+            
+        return outputs
+    
+    def backward(self, errors: list[np.ndarray], inputs: list[np.ndarray]) -> None:
+        dW_f, db_f = 0, 0
+        dW_i, db_i = 0, 0
+        dW_c, db_c = 0, 0
+        dW_o, db_o = 0, 0
+        dW_y, db_y = 0, 0
+        
+        hidden_state = np.zeros_like(self.hidden_states[0])
+        cell_state = np.zeros_like(self.cell_states[0])
+        
+        for t in reversed(range(len(inputs))):
+            err = errors[t]
+            err = np.full((vocab_size, 1), err)
+            dW_y += np.dot(err, self.hidden_states[t].T)
+            db_y += err
+            
+            dhidden = np.dot(self.W_y.T, err) + hidden_state
+            doutput = tanh(self.cell_states[t]) * dhidden * dsigmoid(self.output_gates[t])
+            
+            dW_o += np.dot(doutput, self.concat_inputs[t].T)
+            db_o += doutput
+            
+            dcell_state = dtanh(self.cell_states[t]) * sigmoid(self.output_gates[t]) * dhidden + cell_state
+            
+            dforget = dcell_state * self.cell_states[t-1] * dsigmoid(self.forget_gates[t])
+            
+            dW_f += np.dot(dforget, self.concat_inputs[t].T)
+            db_f += dforget
+            
+            dinput = dcell_state * tanh(self.candidate_gates[t]) * dsigmoid(self.input_gates[t])
+            
+            dW_i += np.dot(dinput, self.concat_inputs[t].T)
+            db_i += dinput
+            
+            dcandidate = dcell_state * sigmoid(self.input_gates[t]) * dtanh(self.candidate_gates[t])
+            
+            dW_c += np.dot(dcandidate, self.concat_inputs[t].T)
+            db_c += dcandidate
+            
+            d_concat_inputs = np.dot(self.W_f.T, dforget) + np.dot(self.W_i.T, dinput) + np.dot(self.W_c.T, dcandidate) + np.dot(self.W_o.T, doutput)
+            
+            hidden_state = d_concat_inputs[:self.hidden_size, :]
+            cell_state = sigmoid(self.forget_gates[t]) * dcell_state
+            
+        for _d in (dW_f, db_f, dW_i, db_i, dW_c, db_c, dW_o, db_o, dW_y, db_y):
+            np.clip(_d, -1, 1, out=_d)
+            
+        self.W_f -= dW_f * self.learning_rate
+        self.b_f -= db_f * self.learning_rate
+        
+        self.W_i -= dW_i * self.learning_rate
+        self.b_i -= db_i * self.learning_rate
+        
+        self.W_c -= dW_c * self.learning_rate
+        self.b_c -= db_c * self.learning_rate
+        
+        self.W_o -= dW_o * self.learning_rate
+        self.b_o -= db_o * self.learning_rate
+        
+        self.W_y -= dW_y * self.learning_rate
+        self.b_y -= db_y * self.learning_rate
+        
+    def train(self, inputs: list[str], labels: list[str], epochs: int = 1):
+        one_hot_inputs = [one_hot_encode(c) for c in inputs]
+        
+        for _ in tqdm.tqdm(range(epochs)):
+            predictions = self.forward(one_hot_inputs)
+                
             errors = []
-            for q in range(len(predictions)):
-                errors += [-softmax(predictions[q])]
-                errors[-1][char_to_idx[labels[q]]] += 1
+            for i in range(len(predictions)):
+                errors += [softmax(predictions[i])]
+                errors[-1][char_to_idx[labels[i]]] -= 1
 
             self.backward(errors, self.concat_inputs)
     
     # Test
-    def test(self, inputs, labels):
+    def test(self, inputs: list[str], labels: list[str]):
         accuracy = 0
-        probabilities = self.forward([oneHotEncode(input) for input in inputs])
+        probabilities = self.forward([one_hot_encode(input) for input in inputs])
 
         output = ''
-        for q in range(len(labels)):
-            prediction = idx_to_char[np.random.choice([*range(char_size)], p = softmax(probabilities[q].reshape(-1)))]
+        for i in range(len(labels)):
+            prediction = idx_to_char[np.random.choice([*range(vocab_size)], p = softmax(probabilities[i].reshape(-1)))]
 
             output += prediction
 
-            if prediction == labels[q]:
+            if prediction == labels[i]:
                 accuracy += 1
 
-        print(f'Ground Truth:\nt{labels}\n')
         print(f'Predictions:\nt{"".join(output)}\n')
-        
         print(f'Accuracy: {round(accuracy * 100 / len(inputs), 2)}%')
         
-# Initialize Network
 hidden_size = 64
+input_size = vocab_size + hidden_size
+output_size = vocab_size
 
-lstm = LSTM(input_size = char_size + hidden_size, hidden_size = hidden_size, output_size = char_size, num_epochs = 1_000, learning_rate = 0.05)
+learning_rate = 0.05
 
-##### Training #####
-lstm.train(train_X, train_y)
+lstm = LSTM(input_size, hidden_size, output_size, learning_rate)
 
-##### Testing #####
-lstm.test(train_X, train_y)
+lstm.train(X_train, Y_train, epochs=1000)
+lstm.test(X_train, Y_train)
+
+
