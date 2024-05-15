@@ -200,7 +200,6 @@ class LSTM:
 
             self.backward(errors, self.concat_inputs)
     
-    # Test
     def test(self, inputs: list[str], labels: list[str]):
         accuracy = 0
         probabilities = self.forward([one_hot_encode(input) for input in inputs])
