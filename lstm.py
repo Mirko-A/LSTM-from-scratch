@@ -138,7 +138,6 @@ class LSTM:
         
         for t in reversed(range(len(inputs))):
             err = errors[t]
-            err = np.full((vocab_size, 1), err)
             dW_y += np.dot(err, self.hidden_states[t].T)
             db_y += err
             
