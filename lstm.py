@@ -1,24 +1,20 @@
 import numpy as np
-import matplotlib.pyplot as plt
 import tqdm
+import json
 
 dataset_path = "datasets/shakespeare/tiny_shakespeare_small.txt"
 with open(dataset_path, 'r') as file:
     data = file.read()
 
-print(f"Data size: {len(data)}")
-
-vocab = set(data)
+#? NOTE: Mirko
+# Need to use dict.fromKeys to remove duplicates
+# since set() does not maintain the order of its
+# elements on each run.
+vocab = list(dict.fromkeys(data))
 vocab_size = len(vocab)
-
-print(f"Vocab size = {vocab_size}")
-print(f"Vocab      = {vocab}")
 
 char_to_idx = {c:i for i, c in enumerate(vocab)}
 idx_to_char = {i:c for i, c in enumerate(vocab)}
-
-a_idx = char_to_idx['a']
-print(f"a-{a_idx}, {a_idx}-{idx_to_char[a_idx]}")
 
 data_size = len(data)
 X_train = data[:-1]
@@ -126,7 +122,7 @@ class LSTM:
             
         return outputs
     
-    def backward(self, errors: list[np.ndarray], inputs: list[np.ndarray]) -> None:
+    def backward(self, errors: list[np.ndarray]) -> None:
         dW_f, db_f = 0, 0
         dW_i, db_i = 0, 0
         dW_c, db_c = 0, 0
@@ -136,9 +132,8 @@ class LSTM:
         hidden_state = np.zeros_like(self.hidden_states[0])
         cell_state = np.zeros_like(self.cell_states[0])
         
-        for t in reversed(range(len(inputs))):
+        for t in reversed(range(len(self.concat_inputs))):
             err = errors[t]
-            err = np.full((vocab_size, 1), err)
             dW_y += np.dot(err, self.hidden_states[t].T)
             db_y += err
             
@@ -199,34 +194,91 @@ class LSTM:
                 errors += [softmax(predictions[i])]
                 errors[-1][char_to_idx[labels[i]]] -= 1
 
-            self.backward(errors, self.concat_inputs)
+            self.backward(errors)
     
-    # Test
+    def save_weights(self, weights_path: str) -> None:
+        weights = {
+            'W_f': self.W_f.tolist(),
+            'b_f': self.b_f.tolist(),
+            'W_i': self.W_i.tolist(),
+            'b_i': self.b_i.tolist(),
+            'W_c': self.W_c.tolist(),
+            'b_c': self.b_c.tolist(),
+            'W_o': self.W_o.tolist(),
+            'b_o': self.b_o.tolist(),
+            'W_y': self.W_y.tolist(),
+            'b_y': self.b_y.tolist(),
+        }
+            
+        
+        with open(weights_path, 'w') as f:
+            json.dump(weights, f)
+    
+    def load_weights(self, weights_path: str) -> None:
+        with open(weights_path, 'r') as f:
+            weights = json.load(f)
+            
+            self.W_f = np.array(weights['W_f'])
+            self.b_f = np.array(weights['b_f'])
+            
+            self.W_i = np.array(weights['W_i'])
+            self.b_i = np.array(weights['b_i'])
+            
+            self.W_c = np.array(weights['W_c'])
+            self.b_c = np.array(weights['b_c'])
+            self.W_o = np.array(weights['W_o'])
+            self.b_o = np.array(weights['b_o'])
+            
+            self.W_y = np.array(weights['W_y'])
+            self.b_y = np.array(weights['b_y'])
+    
     def test(self, inputs: list[str], labels: list[str]):
         accuracy = 0
         probabilities = self.forward([one_hot_encode(input) for input in inputs])
 
         output = ''
         for i in range(len(labels)):
-            prediction = idx_to_char[np.random.choice([*range(vocab_size)], p = softmax(probabilities[i].reshape(-1)))]
+            prediction = idx_to_char[np.random.choice(vocab_size, p = softmax(probabilities[i].reshape(-1)))]
 
             output += prediction
 
             if prediction == labels[i]:
                 accuracy += 1
 
-        print(f'Predictions:\nt{"".join(output)}\n')
+        # print(f'Predictions:\nt{"".join(output)}\n')
         print(f'Accuracy: {round(accuracy * 100 / len(inputs), 2)}%')
-        
-hidden_size = 64
-input_size = vocab_size + hidden_size
-output_size = vocab_size
 
-learning_rate = 0.05
+import argparse
 
-lstm = LSTM(input_size, hidden_size, output_size, learning_rate)
+if __name__ == "__main__":
+    hidden_size = 64
+    input_size = vocab_size + hidden_size
+    output_size = vocab_size
 
-lstm.train(X_train, Y_train, epochs=1000)
-lstm.test(X_train, Y_train)
+    learning_rate = 0.05
+    epochs = 10
+    
+    lstm = LSTM(input_size, hidden_size, output_size, learning_rate)
+    
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--mode", type=str, help="LSTM mode: train or test")
+    parser.add_argument("--weights", type=str, help="Weights file path")
 
+    args = parser.parse_args()
+    weights_path = args.weights if args.weights else "./weights/lstm_weights.json"
+    mode = args.mode if args.mode else "train"
 
+    print(f"Running LSTM network in {mode} mode...")
+
+    if mode == 'train':
+        lstm.train(X_train, Y_train, epochs)
+        lstm.save_weights(weights_path)
+    elif mode == 'test':
+        lstm.load_weights(weights_path)
+        lstm.test(X_train, Y_train)
+    elif mode == 'optimize':
+        lstm.load_weights(weights_path)
+        lstm.train(X_train, Y_train, epochs=10)
+        lstm.save_weights(weights_path)
+    else:
+        print("Invalid mode. Use 'train', 'test' or 'optimize'.")
