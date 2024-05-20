@@ -1,3 +1,4 @@
+import argparse
 import numpy as np
 import tqdm
 import json
@@ -247,8 +248,6 @@ class LSTM:
 
         # print(f'Predictions:\nt{"".join(output)}\n')
         print(f'Accuracy: {round(accuracy * 100 / len(inputs), 2)}%')
-
-import argparse
 
 if __name__ == "__main__":
     hidden_size = 64
