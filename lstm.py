@@ -35,6 +35,9 @@ def softmax(x: np.ndarray) -> np.ndarray:
     exp = np.exp(x)
     return exp/np.sum(exp)
 
+def cross_entropy_loss(y: np.ndarray, y_ref: np.ndarray) -> np.ndarray:
+    return -np.sum(y_ref * np.log(y))
+
 def one_hot_encode(c: str) -> np.ndarray:
     one_hot = np.zeros((vocab_size, 1))
     one_hot[char_to_idx[c]] = 1
@@ -119,11 +122,13 @@ class LSTM:
             self.cell_states[t] = fga * self.cell_states[t-1] + iga * cga
             self.hidden_states[t] = oga * tanh(self.cell_states[t])
             
-            outputs += [np.dot(self.W_y, self.hidden_states[t]) + self.b_y]
+            output = softmax(np.dot(self.W_y, self.hidden_states[t]) + self.b_y)
+            outputs.append(output)
+            self.outputs[t] = output
             
         return outputs
     
-    def backward(self, errors: list[np.ndarray]) -> None:
+    def backward(self, labels: list[np.ndarray]) -> None:
         dW_f, db_f = 0, 0
         dW_i, db_i = 0, 0
         dW_c, db_c = 0, 0
@@ -134,17 +139,19 @@ class LSTM:
         cell_state = np.zeros_like(self.cell_states[0])
         
         for t in reversed(range(len(self.concat_inputs))):
-            err = errors[t]
-            dW_y += np.dot(err, self.hidden_states[t].T)
-            db_y += err
+            dL = -(labels[t]/self.outputs[t])
+            dsoftmax = self.outputs[t] * dL - np.dot(self.outputs[t].T, dL) * self.outputs[t]
             
-            dhidden = np.dot(self.W_y.T, err) + hidden_state
-            doutput = tanh(self.cell_states[t]) * dhidden * dsigmoid(self.output_gates[t])
+            dW_y += np.dot(dsoftmax, self.hidden_states[t].T)
+            db_y += dsoftmax
+            
+            dhidden_state = np.dot(self.W_y.T, dsoftmax) + hidden_state
+            doutput = tanh(self.cell_states[t]) * dhidden_state * dsigmoid(self.output_gates[t])
             
             dW_o += np.dot(doutput, self.concat_inputs[t].T)
             db_o += doutput
             
-            dcell_state = dtanh(self.cell_states[t]) * sigmoid(self.output_gates[t]) * dhidden + cell_state
+            dcell_state = dtanh(self.cell_states[t]) * sigmoid(self.output_gates[t]) * dhidden_state + cell_state
             
             dforget = dcell_state * self.cell_states[t-1] * dsigmoid(self.forget_gates[t])
             
@@ -184,18 +191,23 @@ class LSTM:
         self.W_y -= dW_y * self.learning_rate
         self.b_y -= db_y * self.learning_rate
         
-    def train(self, inputs: list[str], labels: list[str], epochs: int = 1):
+    def train(self, inputs: list[str], labels: list[str], epochs: int = 1) -> list[np.ndarray]:
         one_hot_inputs = [one_hot_encode(c) for c in inputs]
+        one_hot_labels = [one_hot_encode(c) for c in labels]
         
+        losses = []
         for _ in tqdm.tqdm(range(epochs)):
             predictions = self.forward(one_hot_inputs)
+            N = len(predictions)
                 
-            errors = []
-            for i in range(len(predictions)):
-                errors += [softmax(predictions[i])]
-                errors[-1][char_to_idx[labels[i]]] -= 1
+            loss = 0
+            for i in range(N):
+                loss += cross_entropy_loss(predictions[i], one_hot_labels[i])
 
-            self.backward(errors)
+            losses.append(loss/N)
+            self.backward(one_hot_labels)
+            
+        return losses
     
     def save_weights(self, weights_path: str) -> None:
         weights = {
@@ -239,7 +251,7 @@ class LSTM:
 
         output = ''
         for i in range(len(labels)):
-            prediction = idx_to_char[np.random.choice(vocab_size, p = softmax(probabilities[i].reshape(-1)))]
+            prediction = idx_to_char[np.random.choice(vocab_size, p = probabilities[i].reshape(-1))]
 
             output += prediction
 
@@ -254,7 +266,7 @@ if __name__ == "__main__":
     input_size = vocab_size + hidden_size
     output_size = vocab_size
 
-    learning_rate = 0.05
+    learning_rate = 0.06
     epochs = 10
     
     lstm = LSTM(input_size, hidden_size, output_size, learning_rate)
@@ -270,14 +282,14 @@ if __name__ == "__main__":
     print(f"Running LSTM network in {mode} mode...")
 
     if mode == 'train':
-        lstm.train(X_train, Y_train, epochs)
+        _ = lstm.train(X_train, Y_train, epochs)
         lstm.save_weights(weights_path)
     elif mode == 'test':
         lstm.load_weights(weights_path)
         lstm.test(X_train, Y_train)
     elif mode == 'optimize':
         lstm.load_weights(weights_path)
-        lstm.train(X_train, Y_train, epochs=10)
+        _ = lstm.train(X_train, Y_train, epochs)
         lstm.save_weights(weights_path)
     else:
         print("Invalid mode. Use 'train', 'test' or 'optimize'.")
