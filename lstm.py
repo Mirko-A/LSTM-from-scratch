@@ -209,6 +209,36 @@ class LSTM:
             
         return losses
     
+    def test(self, inputs: list[str], labels: list[str]) -> tuple[str, float]:
+        accuracy = 0
+        probabilities = self.forward([one_hot_encode(input) for input in inputs])
+
+        output = ''
+        for i in range(len(labels)):
+            prediction = idx_to_char[np.random.choice(vocab_size, p = probabilities[i].reshape(-1))]
+
+            output += prediction
+
+            if prediction == labels[i]:
+                accuracy += 1
+
+        accuracy = round(accuracy * 100 / len(inputs), 2)
+        
+        return output, accuracy
+
+    def generate(self, prompt: str, length: int = 128) -> str:
+        one_hot_prompt = [one_hot_encode(c) for c in prompt]
+        
+        output = prompt
+        for _ in range(length):
+            probabilities = self.forward(one_hot_prompt)
+            prediction = idx_to_char[np.random.choice(vocab_size, p = probabilities[-1].reshape(-1))]
+            
+            output += prediction
+            one_hot_prompt.append(one_hot_encode(prediction))
+            
+        return output
+
     def save_weights(self, weights_path: str) -> None:
         weights = {
             'W_f': self.W_f.tolist(),
@@ -244,22 +274,6 @@ class LSTM:
             
             self.W_y = np.array(weights['W_y'])
             self.b_y = np.array(weights['b_y'])
-    
-    def test(self, inputs: list[str], labels: list[str]):
-        accuracy = 0
-        probabilities = self.forward([one_hot_encode(input) for input in inputs])
-
-        output = ''
-        for i in range(len(labels)):
-            prediction = idx_to_char[np.random.choice(vocab_size, p = probabilities[i].reshape(-1))]
-
-            output += prediction
-
-            if prediction == labels[i]:
-                accuracy += 1
-
-        # print(f'Predictions:\nt{"".join(output)}\n')
-        print(f'Accuracy: {round(accuracy * 100 / len(inputs), 2)}%')
 
 if __name__ == "__main__":
     hidden_size = 64
@@ -279,17 +293,23 @@ if __name__ == "__main__":
     weights_path = args.weights if args.weights else "./weights/lstm_weights.json"
     mode = args.mode if args.mode else "train"
 
-    print(f"Running LSTM network in {mode} mode...")
+    print(f"Running LSTM network in '{mode}' mode...")
 
-    if mode == 'train':
+    if mode == "train":
         _ = lstm.train(X_train, Y_train, epochs)
         lstm.save_weights(weights_path)
-    elif mode == 'test':
+    elif mode == "test":
         lstm.load_weights(weights_path)
-        lstm.test(X_train, Y_train)
-    elif mode == 'optimize':
+        text, accuracy = lstm.test(X_train, Y_train)
+        print(f"Predictions:\nt{"".join(text)}\n")
+        print(f"Accuracy: {accuracy}%")
+    elif mode == "optimize":
         lstm.load_weights(weights_path)
         _ = lstm.train(X_train, Y_train, epochs)
         lstm.save_weights(weights_path)
+    elif mode == "generate":
+        lstm.load_weights(weights_path)
+        text = lstm.generate("The ", 512)
+        print(text)
     else:
-        print("Invalid mode. Use 'train', 'test' or 'optimize'.")
+        print("Invalid mode. Use 'train', 'test', 'optimize' or 'generate'.")
