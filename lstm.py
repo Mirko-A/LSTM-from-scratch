@@ -191,7 +191,7 @@ class LSTM:
         self.W_y -= dW_y * self.learning_rate
         self.b_y -= db_y * self.learning_rate
         
-    def train(self, inputs: list[str], labels: list[str], epochs: int = 1) -> list[np.ndarray]:
+    def train(self, inputs: str, labels: str, epochs: int = 1) -> list[np.ndarray]:
         one_hot_inputs = [one_hot_encode(c) for c in inputs]
         one_hot_labels = [one_hot_encode(c) for c in labels]
         
@@ -209,7 +209,7 @@ class LSTM:
             
         return losses
     
-    def test(self, inputs: list[str], labels: list[str]) -> tuple[str, float]:
+    def test(self, inputs: str, labels: str) -> tuple[str, float]:
         accuracy = 0
         probabilities = self.forward([one_hot_encode(input) for input in inputs])
 
