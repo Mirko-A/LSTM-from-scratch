@@ -281,7 +281,7 @@ if __name__ == "__main__":
     output_size = vocab_size
 
     learning_rate = 0.06
-    epochs = 10
+    epochs = 1
     
     lstm = LSTM(input_size, hidden_size, output_size, learning_rate)
     
@@ -309,7 +309,7 @@ if __name__ == "__main__":
         lstm.save_weights(weights_path)
     elif mode == "generate":
         lstm.load_weights(weights_path)
-        text = lstm.generate("The ", 512)
+        text = lstm.generate(prompt="The ", length=512)
         print(text)
     else:
         print("Invalid mode. Use 'train', 'test', 'optimize' or 'generate'.")
