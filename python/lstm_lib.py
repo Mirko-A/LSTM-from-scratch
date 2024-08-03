@@ -13,7 +13,7 @@ with open(dataset_path, 'r') as file:
 # elements on each run.
 vocab = list(dict.fromkeys(data))
 vocab_size = len(vocab)
-print(vocab_size)
+print("Vocab size: " + str(vocab_size))
 
 char_to_idx = {c:i for i, c in enumerate(vocab)}
 idx_to_char = {i:c for i, c in enumerate(vocab)}
