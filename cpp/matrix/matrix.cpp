@@ -1,7 +1,9 @@
-#include "matrix.hpp"
 #include <algorithm>
 #include <cassert>
+#include <cmath>
 #include <random>
+
+#include "matrix.hpp"
 
 Matrix::Matrix(std::vector<std::vector<float>> data)
     : row_n(data.size()), col_n(data[0].size()), data(std::move(data)) {
@@ -35,6 +37,18 @@ Matrix Matrix::zeros_like(const Matrix &other) {
 
 Matrix Matrix::ones_like(const Matrix &other) {
     return full_like(other, 1.0f);
+}
+
+Matrix Matrix::arange(uint32_t row_n, uint32_t col_n, uint32_t start) {
+    std::vector<std::vector<float>> data(row_n, std::vector<float>(col_n));
+
+    float val = static_cast<float>(start);
+    for (auto &row : data) {
+        std::generate(row.begin(), row.end(),
+                      [&]() { return val++; });
+    }
+
+    return Matrix(data);
 }
 
 Matrix Matrix::uniform(uint32_t row_n, uint32_t col_n, float low, float high) {
@@ -163,6 +177,92 @@ Matrix Matrix::divide(const Matrix &other) const {
     return Matrix(result);
 }
 
+Matrix Matrix::pow(const Matrix &other) const {
+    assert(dims_same_as(other));
+
+    std::vector<std::vector<float>> result(row_n, std::vector<float>(col_n));
+
+    for (uint32_t i = 0; i < row_n; ++i) {
+        for (uint32_t j = 0; j < col_n; ++j) {
+            result[i][j] = std::pow(data[i][j], other.data[i][j]);
+        }
+    }
+
+    return Matrix(result);
+}
+
+Matrix Matrix::add(float scalar) const {
+    return add(full_like(*this, scalar));
+}
+
+Matrix Matrix::sub(float scalar) const {
+    return add(full_like(*this, -scalar));
+}
+
+Matrix Matrix::multiply(float scalar) const {
+    return multiply(full_like(*this, scalar));
+}
+
+Matrix Matrix::divide(float scalar) const {
+    return divide(full_like(*this, scalar));
+}
+
+Matrix Matrix::pow(float other) const {
+    return pow(full_like(*this, other));
+}
+
+Matrix Matrix::operator-() const {
+    return neg();
+}
+
+Matrix Matrix::operator+(const Matrix &other) const {
+    return add(other);
+}
+
+Matrix Matrix::operator-(const Matrix &other) const {
+    return sub(other);
+}
+
+Matrix Matrix::operator*(const Matrix &other) const {
+    return multiply(other);
+}
+
+Matrix Matrix::operator/(const Matrix &other) const {
+    return divide(other);
+}
+
+Matrix Matrix::operator+(float scalar) const {
+    return add(full_like(*this, scalar));
+}
+
+Matrix Matrix::operator-(float scalar) const {
+    return sub(full_like(*this, scalar));
+}
+
+Matrix Matrix::operator*(float scalar) const {
+    return multiply(full_like(*this, scalar));
+}
+
+Matrix Matrix::operator/(float scalar) const {
+    return divide(full_like(*this, scalar));
+}
+
+Matrix operator+(float scalar, const Matrix &matrix) {
+    return matrix.add(scalar);
+}
+
+Matrix operator-(float scalar, const Matrix &matrix) {
+    return Matrix::full_like(matrix, scalar).sub(matrix);
+}
+
+Matrix operator*(float scalar, const Matrix &matrix) {
+    return matrix.multiply(scalar);
+}
+
+Matrix operator/(float scalar, const Matrix &matrix) {
+    return Matrix::full_like(matrix, scalar).divide(matrix);
+}
+
 Matrix Matrix::matmul(const Matrix &other) const {
     assert(inner_dim_same_as(other));
 
@@ -177,20 +277,6 @@ Matrix Matrix::matmul(const Matrix &other) const {
                 val += data[i][k] * other.data[k][j];
             }
             result[i][j] = val;
-        }
-    }
-
-    return Matrix(result);
-}
-
-Matrix Matrix::pow(const Matrix &other) const {
-    assert(dims_same_as(other));
-
-    std::vector<std::vector<float>> result(row_n, std::vector<float>(col_n));
-
-    for (uint32_t i = 0; i < row_n; ++i) {
-        for (uint32_t j = 0; j < col_n; ++j) {
-            result[i][j] = std::pow(data[i][j], other.data[i][j]);
         }
     }
 
@@ -340,6 +426,11 @@ bool Matrix::all_close(const Matrix &other, float tolerance) const {
     return true;
 }
 
+void Matrix::set(uint32_t row_i, uint32_t col_i, float value) {
+    assert(row_i < row_n && col_i < col_n);
+    data[row_i][col_i] = value;
+}
+
 float Matrix::at(uint32_t row_i, uint32_t col_i) const {
     assert(row_i < row_n && col_i < col_n);
 
@@ -358,6 +449,15 @@ bool Matrix::dims_same_as(const Matrix &other) const {
 
 bool Matrix::inner_dim_same_as(const Matrix &other) const {
     return col_n == other.row_n;
+}
+
+void Matrix::print() const {
+    std::cout << *this;
+}
+
+void Matrix::println() const {
+    std::cout << *this;
+    std::cout << std::endl;
 }
 
 std::ostream &operator<<(std::ostream &os, const Matrix &rhs) {

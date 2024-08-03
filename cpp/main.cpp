@@ -1,13 +1,12 @@
 #include <fstream>
 #include <iostream>
-#include <string>
-
-#include "matrix.hpp"
 #include <set>
+#include <string>
 #include <unordered_map>
 
-std::optional<std::string>
-read_to_string(const std::string &path) {
+#include "matrix.hpp"
+
+std::optional<std::string> read_to_string(const std::string &path) {
     std::ifstream file(path);
     if (!file.is_open()) {
         return std::nullopt;

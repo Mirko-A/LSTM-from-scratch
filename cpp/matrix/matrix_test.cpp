@@ -64,6 +64,16 @@ TEST(MatrixTest, OnesLike) {
     EXPECT_EQ(m_ones_like.at(1, 1), 1.0);
 }
 
+TEST(MatrixTest, Arange) {
+    uint32_t start = 3;
+    Matrix m_arange = Matrix::arange(3, 4, start);
+    for (uint32_t i = 0; i < 3; i++) {
+        for (uint32_t j = 0; j < 3; j++) {
+            EXPECT_EQ(m_arange.at(i, j), static_cast<float>(start + i * 4 + j));
+        }
+    }
+}
+
 TEST(MatrixTest, Uniform) {
     Matrix m = Matrix::uniform(2, 2, 0.0, 1.0);
     EXPECT_GE(m.at(0, 0), 0.0);
@@ -154,16 +164,52 @@ TEST(MatrixTest, Divide) {
     EXPECT_EQ(result.at(1, 1), 5);
 }
 
-TEST(MatrixTest, Matmul) {
+TEST(MatrixTest, OperatorAddMatrix) {
     std::vector<std::vector<float>> data1 = {{1, 2}, {3, 4}};
     std::vector<std::vector<float>> data2 = {{5, 6}, {7, 8}};
     Matrix m1(data1);
     Matrix m2(data2);
-    Matrix result = m1.matmul(m2);
-    EXPECT_EQ(result.at(0, 0), 19);
-    EXPECT_EQ(result.at(0, 1), 22);
-    EXPECT_EQ(result.at(1, 0), 43);
-    EXPECT_EQ(result.at(1, 1), 50);
+    Matrix result = m1 + m2;
+    EXPECT_EQ(result.at(0, 0), 6);
+    EXPECT_EQ(result.at(0, 1), 8);
+    EXPECT_EQ(result.at(1, 0), 10);
+    EXPECT_EQ(result.at(1, 1), 12);
+}
+
+TEST(MatrixTest, OperatorSubMatrix) {
+    std::vector<std::vector<float>> data1 = {{5, 6}, {7, 8}};
+    std::vector<std::vector<float>> data2 = {{1, 2}, {3, 4}};
+    Matrix m1(data1);
+    Matrix m2(data2);
+    Matrix result = m1 - m2;
+    EXPECT_EQ(result.at(0, 0), 4);
+    EXPECT_EQ(result.at(0, 1), 4);
+    EXPECT_EQ(result.at(1, 0), 4);
+    EXPECT_EQ(result.at(1, 1), 4);
+}
+
+TEST(MatrixTest, OperatorMulMatrix) {
+    std::vector<std::vector<float>> data1 = {{1, 2}, {3, 4}};
+    std::vector<std::vector<float>> data2 = {{5, 6}, {7, 8}};
+    Matrix m1(data1);
+    Matrix m2(data2);
+    Matrix result = m1 * m2;
+    EXPECT_EQ(result.at(0, 0), 5);
+    EXPECT_EQ(result.at(0, 1), 12);
+    EXPECT_EQ(result.at(1, 0), 21);
+    EXPECT_EQ(result.at(1, 1), 32);
+}
+
+TEST(MatrixTest, OperatorDivMatrix) {
+    std::vector<std::vector<float>> data1 = {{10, 20}, {30, 40}};
+    std::vector<std::vector<float>> data2 = {{2, 4}, {5, 8}};
+    Matrix m1(data1);
+    Matrix m2(data2);
+    Matrix result = m1 / m2;
+    EXPECT_EQ(result.at(0, 0), 5);
+    EXPECT_EQ(result.at(0, 1), 5);
+    EXPECT_EQ(result.at(1, 0), 6);
+    EXPECT_EQ(result.at(1, 1), 5);
 }
 
 TEST(MatrixTest, Pow) {
@@ -176,6 +222,108 @@ TEST(MatrixTest, Pow) {
     EXPECT_EQ(result.at(0, 1), 4);
     EXPECT_EQ(result.at(1, 0), 9);
     EXPECT_EQ(result.at(1, 1), 16);
+}
+
+TEST(MatrixTest, OperatorAddScalar) {
+    std::vector<std::vector<float>> data = {{1, 2}, {3, 4}};
+    Matrix m(data);
+    Matrix result = m + 5.0f;
+    EXPECT_EQ(result.at(0, 0), 6);
+    EXPECT_EQ(result.at(0, 1), 7);
+    EXPECT_EQ(result.at(1, 0), 8);
+    EXPECT_EQ(result.at(1, 1), 9);
+}
+
+TEST(MatrixTest, OperatorSubScalar) {
+    std::vector<std::vector<float>> data = {{5, 6}, {7, 8}};
+    Matrix m(data);
+    Matrix result = m - 2.0f;
+    EXPECT_EQ(result.at(0, 0), 3);
+    EXPECT_EQ(result.at(0, 1), 4);
+    EXPECT_EQ(result.at(1, 0), 5);
+    EXPECT_EQ(result.at(1, 1), 6);
+}
+
+TEST(MatrixTest, OperatorMulScalar) {
+    std::vector<std::vector<float>> data = {{1, 2}, {3, 4}};
+    Matrix m(data);
+    Matrix result = m * 2.0f;
+    EXPECT_EQ(result.at(0, 0), 2);
+    EXPECT_EQ(result.at(0, 1), 4);
+    EXPECT_EQ(result.at(1, 0), 6);
+    EXPECT_EQ(result.at(1, 1), 8);
+}
+
+TEST(MatrixTest, OperatorDivScalar) {
+    std::vector<std::vector<float>> data = {{10, 20}, {30, 40}};
+    Matrix m(data);
+    Matrix result = m / 2.0f;
+    EXPECT_EQ(result.at(0, 0), 5);
+    EXPECT_EQ(result.at(0, 1), 10);
+    EXPECT_EQ(result.at(1, 0), 15);
+    EXPECT_EQ(result.at(1, 1), 20);
+}
+
+TEST(MatrixTest, OperatorAddScalarRight) {
+    std::vector<std::vector<float>> data = {{1, 2}, {3, 4}};
+    Matrix m(data);
+    Matrix result = 5.0f + m;
+    EXPECT_EQ(result.at(0, 0), 6);
+    EXPECT_EQ(result.at(0, 1), 7);
+    EXPECT_EQ(result.at(1, 0), 8);
+    EXPECT_EQ(result.at(1, 1), 9);
+}
+
+TEST(MatrixTest, OperatorSubScalarRight) {
+    std::vector<std::vector<float>> data = {{5, 6}, {7, 8}};
+    Matrix m(data);
+    Matrix result = 10.0f - m;
+    EXPECT_EQ(result.at(0, 0), 5);
+    EXPECT_EQ(result.at(0, 1), 4);
+    EXPECT_EQ(result.at(1, 0), 3);
+    EXPECT_EQ(result.at(1, 1), 2);
+}
+
+TEST(MatrixTest, OperatorMulScalarRight) {
+    std::vector<std::vector<float>> data = {{1, 2}, {3, 4}};
+    Matrix m(data);
+    Matrix result = 2.0f * m;
+    EXPECT_EQ(result.at(0, 0), 2);
+    EXPECT_EQ(result.at(0, 1), 4);
+    EXPECT_EQ(result.at(1, 0), 6);
+    EXPECT_EQ(result.at(1, 1), 8);
+}
+
+TEST(MatrixTest, OperatorDivScalarRight) {
+    std::vector<std::vector<float>> data = {{10, 20}, {30, 40}};
+    Matrix m(data);
+    Matrix result = 80.0f / m;
+    EXPECT_EQ(result.at(0, 0), 8);
+    EXPECT_EQ(result.at(0, 1), 4);
+    EXPECT_EQ(result.at(1, 0), 2.66666675f);
+    EXPECT_EQ(result.at(1, 1), 2);
+}
+
+TEST(MatrixTest, PowScalar) {
+    std::vector<std::vector<float>> data = {{1, 2}, {3, 4}};
+    Matrix m(data);
+    Matrix result = m.pow(2.0f);
+    EXPECT_EQ(result.at(0, 0), 1);
+    EXPECT_EQ(result.at(0, 1), 4);
+    EXPECT_EQ(result.at(1, 0), 9);
+    EXPECT_EQ(result.at(1, 1), 16);
+}
+
+TEST(MatrixTest, Matmul) {
+    std::vector<std::vector<float>> data1 = {{1, 2}, {3, 4}};
+    std::vector<std::vector<float>> data2 = {{5, 6}, {7, 8}};
+    Matrix m1(data1);
+    Matrix m2(data2);
+    Matrix result = m1.matmul(m2);
+    EXPECT_EQ(result.at(0, 0), 19);
+    EXPECT_EQ(result.at(0, 1), 22);
+    EXPECT_EQ(result.at(1, 0), 43);
+    EXPECT_EQ(result.at(1, 1), 50);
 }
 
 TEST(MatrixTest, Sqrt) {
