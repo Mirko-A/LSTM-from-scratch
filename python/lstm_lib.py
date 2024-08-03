@@ -3,7 +3,7 @@ import numpy as np
 import tqdm
 import json
 
-dataset_path = "datasets/shakespeare/tiny_shakespeare_small.txt"
+dataset_path = "../datasets/shakespeare/tiny_shakespeare_small.txt"
 with open(dataset_path, 'r') as file:
     data = file.read()
 
@@ -13,6 +13,7 @@ with open(dataset_path, 'r') as file:
 # elements on each run.
 vocab = list(dict.fromkeys(data))
 vocab_size = len(vocab)
+print(vocab_size)
 
 char_to_idx = {c:i for i, c in enumerate(vocab)}
 idx_to_char = {i:c for i, c in enumerate(vocab)}

@@ -4,6 +4,7 @@
 
 #include "matrix.hpp"
 #include <set>
+#include <unordered_map>
 
 std::optional<std::string>
 read_to_string(const std::string &path) {
@@ -39,12 +40,23 @@ int main() {
 
     std::string content = maybe_content.value();
     std::set<char> vocab = create_vocab(content);
+    std::size_t vocab_size = vocab.size();
 
+    std::unordered_map<char, uint32_t> char_to_idx;
+    std::unordered_map<uint32_t, char> idx_to_char;
+
+    uint32_t idx = 0;
     for (char c : vocab) {
-        std::cout << c << " ";
+        char_to_idx[c] = idx;
+        idx_to_char[idx] = c;
+        idx += 1;
     }
 
-    std::cout << std::endl;
+    for (uint32_t i = 0; i < idx; i++) {
+        // std::cout << char_to_idx[idx_to_char[i]] << ": " << idx_to_char[i] << std::endl;
+    }
+
+    std::cout << "Vocab size: " << vocab_size << std::endl;
 
     return 0;
 }
