@@ -10,6 +10,6 @@ include_directories(${GTEST_INCLUDE_DIRS})
 include_directories(matrix)
 
 # Add the source files
-add_executable(LSTM main.cpp matrix/matrix.cpp)
+add_executable(LSTM main.cpp lstm.cpp matrix/matrix.cpp)
 add_executable(MatrixTests matrix/matrix.cpp matrix/matrix_test.cpp)
 target_link_libraries(MatrixTests ${GTEST_LIBRARIES} pthread)

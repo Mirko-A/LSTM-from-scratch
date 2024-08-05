@@ -1,14 +1,23 @@
+#pragma once
+
 #include <unordered_map>
 
 #include "matrix.hpp"
 
 class LSTM {
 public:
+    LSTM() = delete;
+    LSTM(const LSTM &) = delete;
+    LSTM &operator=(const LSTM &) = delete;
+    LSTM &operator=(LSTM &&) = delete;
+
     LSTM(uint32_t input_size, uint32_t hidden_size, uint32_t output_size, float learning_rate = 1e-3);
+
     std::vector<Matrix> forward(std::vector<Matrix> inputs);
     void backward(std::vector<Matrix> labels);
-    std::vector<Matrix> train(const std::vector<char> &inputs, uint32_t epochs = 1);
-    std::tuple<std::string, float> test(const std::vector<char> &inputs, const std::vector<char> &labels);
+
+    std::vector<Matrix> train(const std::vector<Matrix> &one_hot_inputs, const std::vector<Matrix> &one_hot_labels, uint32_t vocab_size, uint32_t epochs);
+    std::tuple<std::string, float> test(const std::vector<Matrix> &one_hot_inputs, const std::vector<Matrix> &one_hot_labels);
 
 private:
     void reset_cache();

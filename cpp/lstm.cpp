@@ -1,8 +1,26 @@
+#include <cassert>
 #include <cmath>
 
 #include "lstm.hpp"
 
-LSTM::LSTM(uint32_t input_size, uint32_t hidden_size, uint32_t output_size, float learning_rate = 1e-3)
+static Matrix dtanh(const Matrix &x) {
+    return 1.0f - x.tanh().pow(2.0f);
+}
+
+static Matrix dsigmoid(const Matrix &x) {
+    return x.sigmoid() * (1.0f - x.sigmoid());
+}
+
+static Matrix cross_entropy_loss(const Matrix &y_pred, const Matrix &y_true) {
+    return -(y_true * y_pred.log()).sum();
+}
+
+static Matrix init_weights(uint32_t input_size, uint32_t output_size) {
+    // Xavier initialization
+    return Matrix::uniform(output_size, input_size, -1.0f, 1.0f) * std::sqrt(6.0f / (input_size + output_size));
+}
+
+LSTM::LSTM(uint32_t input_size, uint32_t hidden_size, uint32_t output_size, float learning_rate)
     : input_size(input_size), hidden_size(hidden_size), output_size(output_size), learning_rate(learning_rate) {
     W_f = init_weights(input_size, hidden_size);
     b_f = Matrix::zeros(hidden_size, 1);
@@ -145,32 +163,28 @@ void LSTM::backward(std::vector<Matrix> labels) {
     b_y = b_y - db_y * learning_rate;
 }
 
-std::vector<Matrix> train(const std::vector<char> &inputs, uint32_t epochs) {
+std::vector<Matrix> LSTM::train(const std::vector<Matrix> &one_hot_inputs, const std::vector<Matrix> &one_hot_labels, uint32_t vocab_size, uint32_t epochs) {
+    assert(one_hot_inputs.size() == one_hot_labels.size());
+    uint32_t data_size = static_cast<uint32_t>(one_hot_inputs.size());
+
+    std::vector<Matrix> losses(data_size);
+    for (uint32_t epoch = 0; epoch < epochs; ++epoch) {
+        std::vector<Matrix> predictions = forward(one_hot_inputs);
+        uint32_t N = static_cast<uint32_t>(predictions.size());
+
+        Matrix loss = Matrix::zeros(1, 1);
+
+        for (uint32_t i = 0; i < N; ++i) {
+            loss = loss + cross_entropy_loss(predictions[i], one_hot_labels[i]);
+        }
+
+        losses[epoch] = loss / N;
+        backward(one_hot_labels);
+    }
+
+    return losses;
 }
 
-std::tuple<std::vector<char>, float> test(const std::vector<char> &inputs, const std::vector<char> &labels) {
-}
-
-static Matrix dtanh(const Matrix &x) {
-    return 1.0f - x.tanh().pow(2.0f);
-}
-
-static Matrix dsigmoid(const Matrix &x) {
-    return x.sigmoid() * (1.0f - x.sigmoid());
-}
-
-static Matrix cross_entropy_loss(const Matrix &y_pred, const Matrix &y_true) {
-    return -(y_true * y_pred.log()).sum();
-}
-
-static Matrix one_hot_encode(uint32_t class_idx, uint32_t n_classes) {
-    Matrix one_hot = Matrix::zeros(1, n_classes);
-    one_hot.set(0, class_idx, 1.0f);
-
-    return one_hot;
-}
-
-static Matrix init_weights(uint32_t input_size, uint32_t output_size) {
-    // Xavier initialization
-    return Matrix::uniform(output_size, input_size, -1.0f, 1.0f) * std::sqrt(6.0f / (input_size + output_size));
+std::tuple<std::string, float> test(const std::vector<Matrix> &one_hot_inputs, const std::vector<Matrix> &one_hot_labels) {
+    return std::make_tuple(std::string(), 0.0f);
 }

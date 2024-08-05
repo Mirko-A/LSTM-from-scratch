@@ -1,12 +1,14 @@
+#include <cassert>
 #include <fstream>
 #include <iostream>
 #include <set>
 #include <string>
 #include <unordered_map>
 
+#include "lstm.hpp"
 #include "matrix.hpp"
 
-std::optional<std::string> read_to_string(const std::string &path) {
+static std::optional<std::string> read_to_string(const std::string &path) {
     std::ifstream file(path);
     if (!file.is_open()) {
         return std::nullopt;
@@ -22,8 +24,17 @@ std::optional<std::string> read_to_string(const std::string &path) {
     return std::make_optional(content);
 }
 
-std::set<char> create_vocab(const std::string &data) {
+static std::set<char> create_vocab(const std::vector<char> &data) {
     return std::set<char>(data.begin(), data.end());
+}
+
+static Matrix one_hot_encode(uint32_t class_idx, uint32_t n_classes) {
+    assert(class_idx < n_classes);
+
+    Matrix one_hot = Matrix::zeros(1, n_classes);
+    one_hot.set(0, class_idx, 1.0f);
+
+    return one_hot;
 }
 
 int main() {
@@ -35,7 +46,8 @@ int main() {
         return 1;
     }
 
-    std::string dataset = maybe_dataset.value();
+    std::string dataset_str = maybe_dataset.value();
+    std::vector<char> dataset(dataset_str.begin(), dataset_str.end());
     std::size_t dataset_size = dataset.size();
     std::set<char> vocab = create_vocab(dataset);
     std::size_t vocab_size = vocab.size();
@@ -53,8 +65,40 @@ int main() {
         idx += 1;
     }
 
-    std::string x_train = std::string(dataset.begin(), dataset.end() - 1);
-    std::string y_train = std::string(dataset.begin() + 1, dataset.end());
+    std::vector<char> x_train_chars(dataset.begin(), dataset.end() - 1);
+    std::vector<char> y_train_chars(dataset.begin() + 1, dataset.end());
+
+    std::vector<Matrix> x_train(x_train_chars.size());
+    std::vector<Matrix> y_train(y_train_chars.size());
+
+    assert(x_train.size() == y_train.size());
+
+    uint32_t data_size = static_cast<uint32_t>(x_train.size());
+
+    for (uint32_t i = 0; i < data_size; ++i) {
+        x_train[i] = one_hot_encode(char_to_idx[x_train_chars[i]], vocab_size);
+        y_train[i] = one_hot_encode(char_to_idx[y_train_chars[i]], vocab_size);
+    }
+
+    // Hyperparameters
+    uint32_t hidden_size = 64;
+    uint32_t input_size = vocab_size + hidden_size;
+    uint32_t output_size = vocab_size;
+
+    float learning_rate = 0.06f;
+    uint32_t epochs = 10;
+
+    LSTM lstm(input_size, hidden_size, output_size, learning_rate);
+
+    std::cout << "Training LSTM network..." << std::endl;
+
+    auto losses = lstm.train(x_train, y_train, vocab_size, epochs);
+
+    uint32_t epoch = 0;
+    for (auto loss : losses) {
+        std::cout << "Loss epoch " << epoch << ": " << loss << std::endl;
+        epoch++;
+    }
 
     return 0;
 }
