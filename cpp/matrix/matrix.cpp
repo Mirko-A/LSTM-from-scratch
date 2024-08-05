@@ -5,6 +5,35 @@
 
 #include "matrix.hpp"
 
+Matrix::Matrix()
+    : row_n(0), col_n(0) {}
+
+Matrix::Matrix(const Matrix &other)
+    : row_n(other.row_n), col_n(other.col_n), data(other.data) {}
+
+Matrix::Matrix(Matrix &&other)
+    : row_n(other.row_n), col_n(other.col_n), data(std::move(other.data)) {}
+
+Matrix &Matrix::operator=(const Matrix &other) {
+    if (this != &other) {
+        row_n = other.row_n;
+        col_n = other.col_n;
+        data = other.data;
+    }
+
+    return *this;
+}
+
+Matrix &Matrix::operator=(Matrix &&other) {
+    if (this != &other) {
+        row_n = other.row_n;
+        col_n = other.col_n;
+        data = std::move(other.data);
+    }
+
+    return *this;
+}
+
 Matrix::Matrix(std::vector<std::vector<float>> data)
     : row_n(data.size()), col_n(data[0].size()), data(std::move(data)) {
     assert(!this->data.empty());
@@ -66,6 +95,54 @@ Matrix Matrix::uniform(uint32_t row_n, uint32_t col_n, float low, float high) {
     return Matrix(data);
 }
 
+Matrix Matrix::concatenate(uint8_t axis, const std::vector<Matrix> &matrices) {
+    assert(!matrices.empty());
+
+    if (axis == 0) {
+        uint32_t new_row_n = 0;
+        uint32_t new_col_n = matrices[0].col_n;
+
+        for (const auto &matrix : matrices) {
+            assert(matrix.col_n == new_col_n);
+            new_row_n += matrix.row_n;
+        }
+
+        std::vector<std::vector<float>> result(new_row_n, std::vector<float>(new_col_n));
+        uint32_t row_i = 0;
+        for (const auto &matrix : matrices) {
+            for (uint32_t i = 0; i < matrix.row_n; ++i) {
+                for (uint32_t j = 0; j < matrix.col_n; ++j) {
+                    result[row_i][j] = matrix.data[i][j];
+                }
+                ++row_i;
+            }
+        }
+
+        return Matrix(result);
+    } else {
+        uint32_t new_row_n = matrices[0].row_n;
+        uint32_t new_col_n = 0;
+
+        for (const auto &matrix : matrices) {
+            assert(matrix.row_n == new_row_n);
+            new_col_n += matrix.col_n;
+        }
+
+        std::vector<std::vector<float>> result(new_row_n, std::vector<float>(new_col_n));
+        uint32_t col_i = 0;
+        for (const auto &matrix : matrices) {
+            for (uint32_t i = 0; i < matrix.row_n; ++i) {
+                for (uint32_t j = 0; j < matrix.col_n; ++j) {
+                    result[i][col_i] = matrix.data[i][j];
+                }
+                col_i += matrix.col_n;
+            }
+        }
+
+        return Matrix(result);
+    }
+}
+
 Matrix Matrix::transpose() const {
     std::vector<std::vector<float>> transposed(col_n, std::vector<float>(row_n));
 
@@ -82,7 +159,7 @@ Matrix Matrix::T() const {
     return transpose();
 }
 
-Matrix Matrix::expand(int axis, uint32_t new_size) const {
+Matrix Matrix::expand(uint8_t axis, uint32_t new_size) const {
     assert(axis == 0 || axis == 1);
 
     if (axis == 0) {
@@ -107,6 +184,102 @@ Matrix Matrix::expand(int axis, uint32_t new_size) const {
         }
 
         return Matrix(expanded);
+    }
+}
+
+Matrix Matrix::pad_start(uint8_t axis, uint32_t pad_size) const {
+    assert(axis == 0 || axis == 1);
+
+    if (axis == 0) {
+        std::vector<std::vector<float>> padded(row_n + pad_size, std::vector<float>(col_n));
+        for (uint32_t i = 0; i < row_n; ++i) {
+            for (uint32_t j = 0; j < col_n; ++j) {
+                padded[i + pad_size][j] = data[i][j];
+            }
+        }
+
+        return Matrix(padded);
+    } else {
+        std::vector<std::vector<float>> padded(row_n, std::vector<float>(col_n + pad_size));
+        for (uint32_t i = 0; i < row_n; ++i) {
+            for (uint32_t j = 0; j < col_n; ++j) {
+                padded[i][j + pad_size] = data[i][j];
+            }
+        }
+
+        return Matrix(padded);
+    }
+}
+
+Matrix Matrix::pad_end(uint8_t axis, uint32_t pad_size) const {
+    assert(axis == 0 || axis == 1);
+
+    if (axis == 0) {
+        std::vector<std::vector<float>> padded(row_n + pad_size, std::vector<float>(col_n));
+        for (uint32_t i = 0; i < row_n; ++i) {
+            for (uint32_t j = 0; j < col_n; ++j) {
+                padded[i][j] = data[i][j];
+            }
+        }
+
+        return Matrix(padded);
+    } else {
+        std::vector<std::vector<float>> padded(row_n, std::vector<float>(col_n + pad_size));
+        for (uint32_t i = 0; i < row_n; ++i) {
+            for (uint32_t j = 0; j < col_n; ++j) {
+                padded[i][j] = data[i][j];
+            }
+        }
+
+        return Matrix(padded);
+    }
+}
+
+Matrix Matrix::shrink_start(uint8_t axis, uint32_t shrink_size) const {
+    assert(axis == 0 || axis == 1);
+
+    if (axis == 0) {
+        std::vector<std::vector<float>> shrunk(row_n - shrink_size, std::vector<float>(col_n));
+        for (uint32_t i = 0; i < row_n - shrink_size; ++i) {
+            for (uint32_t j = 0; j < col_n; ++j) {
+                shrunk[i][j] = data[i + shrink_size][j];
+            }
+        }
+
+        return Matrix(shrunk);
+    } else {
+        std::vector<std::vector<float>> shrunk(row_n, std::vector<float>(col_n - shrink_size));
+        for (uint32_t i = 0; i < row_n; ++i) {
+            for (uint32_t j = 0; j < col_n - shrink_size; ++j) {
+                shrunk[i][j] = data[i][j + shrink_size];
+            }
+        }
+
+        return Matrix(shrunk);
+    }
+}
+
+Matrix Matrix::shrink_end(uint8_t axis, uint32_t shrink_size) const {
+    assert(axis == 0 || axis == 1);
+
+    if (axis == 0) {
+        std::vector<std::vector<float>> shrunk(row_n - shrink_size, std::vector<float>(col_n));
+        for (uint32_t i = 0; i < row_n - shrink_size; ++i) {
+            for (uint32_t j = 0; j < col_n; ++j) {
+                shrunk[i][j] = data[i][j];
+            }
+        }
+
+        return Matrix(shrunk);
+    } else {
+        std::vector<std::vector<float>> shrunk(row_n, std::vector<float>(col_n - shrink_size));
+        for (uint32_t i = 0; i < row_n; ++i) {
+            for (uint32_t j = 0; j < col_n - shrink_size; ++j) {
+                shrunk[i][j] = data[i][j];
+            }
+        }
+
+        return Matrix(shrunk);
     }
 }
 
@@ -283,6 +456,18 @@ Matrix Matrix::matmul(const Matrix &other) const {
     return Matrix(result);
 }
 
+Matrix Matrix::clamp(float min, float max) const {
+    std::vector<std::vector<float>> result(row_n, std::vector<float>(col_n));
+
+    for (uint32_t i = 0; i < row_n; ++i) {
+        for (uint32_t j = 0; j < col_n; ++j) {
+            result[i][j] = std::clamp(data[i][j], min, max);
+        }
+    }
+
+    return Matrix(result);
+}
+
 Matrix Matrix::sqrt() const {
     std::vector<std::vector<float>> result(row_n, std::vector<float>(col_n));
 
@@ -441,6 +626,10 @@ float Matrix::scalar() const {
     assert(row_n == 1 && col_n == 1);
 
     return data[0][0];
+}
+
+std::pair<uint32_t, uint32_t> Matrix::shape() const {
+    return {row_n, col_n};
 }
 
 bool Matrix::dims_same_as(const Matrix &other) const {

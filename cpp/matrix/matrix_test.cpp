@@ -1,429 +1,669 @@
 #include "matrix.hpp"
 #include <gtest/gtest.h>
 
+TEST(MatrixTest, DefaultConstructor) {
+    Matrix m;
+    Matrix expected;
+    EXPECT_TRUE(m.equal(expected));
+}
+
 TEST(MatrixTest, Constructor) {
-    std::vector<std::vector<float>> data = {{1, 2}, {3, 4}};
+    std::vector<std::vector<float>> data = {{1.0f, 2.0f}, {3.0f, 4.0f}};
     Matrix m(data);
-    EXPECT_EQ(m.at(0, 0), 1);
-    EXPECT_EQ(m.at(0, 1), 2);
-    EXPECT_EQ(m.at(1, 0), 3);
-    EXPECT_EQ(m.at(1, 1), 4);
+    std::vector<std::vector<float>> expected_data = {{1.0f, 2.0f}, {3.0f, 4.0f}};
+    Matrix expected(expected_data);
+    EXPECT_TRUE(m.equal(expected));
+}
+
+TEST(MatrixTest, CopyConstructor) {
+    std::vector<std::vector<float>> data = {{1.0f, 2.0f}, {3.0f, 4.0f}};
+    Matrix m(data);
+    Matrix m_copy(m);
+    std::vector<std::vector<float>> expected_data = {{1.0f, 2.0f}, {3.0f, 4.0f}};
+    Matrix expected(expected_data);
+    EXPECT_TRUE(m_copy.equal(expected));
+}
+
+TEST(MatrixTest, MoveConstructor) {
+    std::vector<std::vector<float>> data = {{1.0f, 2.0f}, {3.0f, 4.0f}};
+    Matrix m(data);
+    Matrix m_move(std::move(m));
+    std::vector<std::vector<float>> expected_data = {{1.0f, 2.0f}, {3.0f, 4.0f}};
+    Matrix expected(expected_data);
+    EXPECT_TRUE(m_move.equal(expected));
+}
+
+TEST(MatrixTest, CopyAssignment) {
+    std::vector<std::vector<float>> data = {{1.0f, 2.0f}, {3.0f, 4.0f}};
+    Matrix m(data);
+    Matrix m_copy = m;
+    std::vector<std::vector<float>> expected_data = {{1.0f, 2.0f}, {3.0f, 4.0f}};
+    Matrix expected(expected_data);
+    EXPECT_TRUE(m_copy.equal(expected));
+}
+
+TEST(MatrixTest, MoveAssignment) {
+    std::vector<std::vector<float>> data = {{1.0f, 2.0f}, {3.0f, 4.0f}};
+    Matrix m(data);
+    Matrix m_move = std::move(m);
+    std::vector<std::vector<float>> expected_data = {{1.0f, 2.0f}, {3.0f, 4.0f}};
+    Matrix expected(expected_data);
+    EXPECT_TRUE(m_move.equal(expected));
+}
+
+TEST(MatrixTest, Full) {
+    Matrix m = Matrix::full(2, 2, 1);
+    std::vector<std::vector<float>> expected_data = {{1.0f, 1.0f}, {1.0f, 1.0f}};
+    Matrix expected(expected_data);
+    EXPECT_TRUE(m.equal(expected));
 }
 
 TEST(MatrixTest, Zeros) {
     Matrix m = Matrix::zeros(2, 2);
-    EXPECT_EQ(m.at(0, 0), 0);
-    EXPECT_EQ(m.at(0, 1), 0);
-    EXPECT_EQ(m.at(1, 0), 0);
-    EXPECT_EQ(m.at(1, 1), 0);
+    std::vector<std::vector<float>> expected_data = {{0.0f, 0.0f}, {0.0f, 0.0f}};
+    Matrix expected(expected_data);
+    EXPECT_TRUE(m.equal(expected));
 }
 
 TEST(MatrixTest, Ones) {
     Matrix m = Matrix::ones(2, 2);
-    EXPECT_EQ(m.at(0, 0), 1);
-    EXPECT_EQ(m.at(0, 1), 1);
-    EXPECT_EQ(m.at(1, 0), 1);
-    EXPECT_EQ(m.at(1, 1), 1);
-}
-
-TEST(MatrixTest, Full) {
-    Matrix m = Matrix::full(2, 2, 3.5);
-    EXPECT_EQ(m.at(0, 0), 3.5);
-    EXPECT_EQ(m.at(0, 1), 3.5);
-    EXPECT_EQ(m.at(1, 0), 3.5);
-    EXPECT_EQ(m.at(1, 1), 3.5);
+    std::vector<std::vector<float>> expected_data = {{1.0f, 1.0f}, {1.0f, 1.0f}};
+    Matrix expected(expected_data);
+    EXPECT_TRUE(m.equal(expected));
 }
 
 TEST(MatrixTest, FullLike) {
-    std::vector<std::vector<float>> data = {{1, 2}, {3, 4}};
+    std::vector<std::vector<float>> data = {{1.0f, 2.0f}, {3.0f, 4.0f}};
     Matrix m(data);
-    Matrix m_full_like = Matrix::full_like(m, 5.0);
-    EXPECT_EQ(m_full_like.at(0, 0), 5.0);
-    EXPECT_EQ(m_full_like.at(0, 1), 5.0);
-    EXPECT_EQ(m_full_like.at(1, 0), 5.0);
-    EXPECT_EQ(m_full_like.at(1, 1), 5.0);
+    Matrix m_full_like = Matrix::full_like(m, 1);
+    std::vector<std::vector<float>> expected_data = {{1.0f, 1.0f}, {1.0f, 1.0f}};
+    Matrix expected(expected_data);
+    EXPECT_TRUE(m_full_like.equal(expected));
 }
 
 TEST(MatrixTest, ZerosLike) {
-    std::vector<std::vector<float>> data = {{1, 2}, {3, 4}};
+    std::vector<std::vector<float>> data = {{1.0f, 2.0f}, {3.0f, 4.0f}};
     Matrix m(data);
     Matrix m_zeros_like = Matrix::zeros_like(m);
-    EXPECT_EQ(m_zeros_like.at(0, 0), 0.0);
-    EXPECT_EQ(m_zeros_like.at(0, 1), 0.0);
-    EXPECT_EQ(m_zeros_like.at(1, 0), 0.0);
-    EXPECT_EQ(m_zeros_like.at(1, 1), 0.0);
+    std::vector<std::vector<float>> expected_data = {{0.0f, 0.0f}, {0.0f, 0.0f}};
+    Matrix expected(expected_data);
+    EXPECT_TRUE(m_zeros_like.equal(expected));
 }
 
 TEST(MatrixTest, OnesLike) {
-    std::vector<std::vector<float>> data = {{1, 2}, {3, 4}};
+    std::vector<std::vector<float>> data = {{1.0f, 2.0f}, {3.0f, 4.0f}};
     Matrix m(data);
     Matrix m_ones_like = Matrix::ones_like(m);
-    EXPECT_EQ(m_ones_like.at(0, 0), 1.0);
-    EXPECT_EQ(m_ones_like.at(0, 1), 1.0);
-    EXPECT_EQ(m_ones_like.at(1, 0), 1.0);
-    EXPECT_EQ(m_ones_like.at(1, 1), 1.0);
+    std::vector<std::vector<float>> expected_data = {{1.0f, 1.0f}, {1.0f, 1.0f}};
+    Matrix expected(expected_data);
+    EXPECT_TRUE(m_ones_like.equal(expected));
 }
 
 TEST(MatrixTest, Arange) {
-    uint32_t start = 3;
-    Matrix m_arange = Matrix::arange(3, 4, start);
-    for (uint32_t i = 0; i < 3; i++) {
-        for (uint32_t j = 0; j < 3; j++) {
-            EXPECT_EQ(m_arange.at(i, j), static_cast<float>(start + i * 4 + j));
+    Matrix m = Matrix::arange(2, 2);
+    std::vector<std::vector<float>> expected_data = {{0.0f, 1.0f}, {2.0f, 3.0f}};
+    Matrix expected(expected_data);
+    EXPECT_TRUE(m.equal(expected));
+}
+
+Test(MatrixTest, ArangeFromStart) {
+    Matrix m = Matrix::arange(2, 2, 1);
+    std::vector<std::vector<float>> expected_data = {{1.0f, 2.0f}, {3.0f, 4.0f}};
+    Matrix expected(expected_data);
+    EXPECT_TRUE(m.equal(expected));
+}
+
+TEST(MatrixTest, Uniform) {
+    Matrix m = Matrix::uniform(2, 2, 0.0f, 1.0f);
+    for (uint32_t i = 0; i < m.row_n(); ++i) {
+        for (uint32_t j = 0; j < m.col_n(); ++j) {
+            EXPECT_GE(m(i, j), 0.0f);
+            EXPECT_LE(m(i, j), 1.0f);
         }
     }
 }
 
-TEST(MatrixTest, Uniform) {
-    Matrix m = Matrix::uniform(2, 2, 0.0, 1.0);
-    EXPECT_GE(m.at(0, 0), 0.0);
-    EXPECT_LE(m.at(0, 0), 1.0);
-    EXPECT_GE(m.at(0, 1), 0.0);
-    EXPECT_LE(m.at(0, 1), 1.0);
-    EXPECT_GE(m.at(1, 0), 0.0);
-    EXPECT_LE(m.at(1, 0), 1.0);
-    EXPECT_GE(m.at(1, 1), 0.0);
-    EXPECT_LE(m.at(1, 1), 1.0);
+TEST(MatrixTest, Transpose) {
+    std::vector<std::vector<float>> data = {{1.0f, 2.0f}, {3.0f, 4.0f}};
+    Matrix m(data);
+    Matrix m_transpose = m.transpose();
+    std::vector<std::vector<float>> expected_data = {{1.0f, 3.0f}, {2.0f, 4.0f}};
+    Matrix expected(expected_data);
+    EXPECT_TRUE(m_transpose.equal(expected));
 }
 
-TEST(MatrixTest, Transpose) {
-    std::vector<std::vector<float>> data = {{1, 2}, {3, 4}};
+TEST(MatrixTest, T) {
+    std::vector<std::vector<float>> data = {{1.0f, 2.0f}, {3.0f, 4.0f}};
     Matrix m(data);
-    Matrix t = m.transpose();
-    EXPECT_EQ(t.at(0, 0), 1);
-    EXPECT_EQ(t.at(0, 1), 3);
-    EXPECT_EQ(t.at(1, 0), 2);
-    EXPECT_EQ(t.at(1, 1), 4);
+    Matrix m_T = m.T();
+    std::vector<std::vector<float>> expected_data = {{1.0f, 3.0f}, {2.0f, 4.0f}};
+    Matrix expected(expected_data);
+    EXPECT_TRUE(m_T.equal(expected));
 }
 
 TEST(MatrixTest, Expand) {
-    std::vector<std::vector<float>> data = {{1, 2}};
+    std::vector<std::vector<float>> data = {{1.0f, 2.0f}, {3.0f, 4.0f}};
     Matrix m(data);
-    Matrix expanded = m.expand(0, 2);
-    EXPECT_EQ(expanded.at(0, 0), 1);
-    EXPECT_EQ(expanded.at(0, 1), 2);
-    EXPECT_EQ(expanded.at(1, 0), 1);
-    EXPECT_EQ(expanded.at(1, 1), 2);
+    Matrix m_expand = m.expand(0, 2);
+    std::vector<std::vector<float>> expected_data = {{1.0f, 2.0f}, {1.0f, 2.0f}, {3.0f, 4.0f}, {3, 4}};
+    Matrix expected(expected_data);
+    EXPECT_TRUE(m_expand.equal(expected));
+}
+
+TEST(MatrixTest, PadStartAxis0) {
+    std::vector<std::vector<float>> data = {{1.0f, 2.0f}, {3.0f, 4.0f}};
+    Matrix m(data);
+    Matrix m_pad = m.pad_start(0, 1);
+    std::vector<std::vector<float>> expected_data = {{0.0f, 0.0f}, {1.0f, 2.0f}, {3.0f, 4.0f}};
+    Matrix expected(expected_data);
+    EXPECT_TRUE(m_pad.equal(expected));
+}
+
+TEST(MatrixTest, PadStartAxis1) {
+    std::vector<std::vector<float>> data = {{1.0f, 2.0f}, {3.0f, 4.0f}};
+    Matrix m(data);
+    Matrix m_pad = m.pad_start(1, 1);
+    std::vector<std::vector<float>> expected_data = {{0.0f, 1.0f, 2.0f}, {0.0f, 3.0f, 4.0f}};
+    Matrix expected(expected_data);
+    EXPECT_TRUE(m_pad.equal(expected));
+}
+
+TEST(MatrixTest, PadEndAxis0) {
+    std::vector<std::vector<float>> data = {{1.0f, 2.0f}, {3.0f, 4.0f}};
+    Matrix m(data);
+    Matrix m_pad = m.pad_end(0, 1);
+    std::vector<std::vector<float>> expected_data = {{1.0f, 2.0f}, {3.0f, 4.0f}, {0.0f, 0.0f}};
+    Matrix expected(expected_data);
+    EXPECT_TRUE(m_pad.equal(expected));
+}
+
+TEST(MatrixTest, PadEndAxis1) {
+    std::vector<std::vector<float>> data = {{1.0f, 2.0f}, {3.0f, 4.0f}};
+    Matrix m(data);
+    Matrix m_pad = m.pad_end(1, 1);
+    std::vector<std::vector<float>> expected_data = {{1.0f, 2.0f, 0.0f}, {3.0f, 4.0f, 0.0f}};
+    Matrix expected(expected_data);
+    EXPECT_TRUE(m_pad.equal(expected));
+}
+
+TEST(MatrixTest, ShrinkStartAxis0) {
+    std::vector<std::vector<float>> data = {{1.0f, 2.0f}, {3.0f, 4.0f}, {5.0f, 6.0f}};
+    Matrix m(data);
+    Matrix m_shrink = m.shrink_start(0, 1);
+    std::vector<std::vector<float>> expected_data = {{3.0f, 4.0f}, {5.0f, 6.0f}};
+    Matrix expected(expected_data);
+    EXPECT_TRUE(m_shrink.equal(expected));
+}
+
+TEST(MatrixTest, ShrinkStartAxis1) {
+    std::vector<std::vector<float>> data = {{1.0f, 2.0f, 3.0f}, {4.0f, 5.0f, 6.0f}};
+    Matrix m(data);
+    Matrix m_shrink = m.shrink_start(1, 1);
+    std::vector<std::vector<float>> expected_data = {{2.0f, 3.0f}, {5.0f, 6.0f}};
+    Matrix expected(expected_data);
+    EXPECT_TRUE(m_shrink.equal(expected));
+}
+
+TEST(MatrixTest, ShrinkEndAxis0) {
+    std::vector<std::vector<float>> data = {{1.0f, 2.0f}, {3.0f, 4.0f}, {5.0f, 6.0f}};
+    Matrix m(data);
+    Matrix m_shrink = m.shrink_end(0, 1);
+    std::vector<std::vector<float>> expected_data = {{1.0f, 2.0f}, {3.0f, 4.0f}};
+    Matrix expected(expected_data);
+    EXPECT_TRUE(m_shrink.equal(expected));
+}
+
+TEST(MatrixTest, ShrinkEndAxis1) {
+    std::vector<std::vector<float>> data = {{1.0f, 2.0f, 3.0f}, {4.0f, 5.0f, 6.0f}};
+    Matrix m(data);
+    Matrix m_shrink = m.shrink_end(1, 1);
+    std::vector<std::vector<float>> expected_data = {{1.0f, 2.0f}, {4.0f, 5.0f}};
+    Matrix expected(expected_data);
+    EXPECT_TRUE(m_shrink.equal(expected));
 }
 
 TEST(MatrixTest, Neg) {
-    std::vector<std::vector<float>> data = {{1, -2}, {-3, 4}};
+    std::vector<std::vector<float>> data = {{1.0f, 2.0f}, {3.0f, 4.0f}};
     Matrix m(data);
-    Matrix neg_m = m.neg();
-    EXPECT_EQ(neg_m.at(0, 0), -1);
-    EXPECT_EQ(neg_m.at(0, 1), 2);
-    EXPECT_EQ(neg_m.at(1, 0), 3);
-    EXPECT_EQ(neg_m.at(1, 1), -4);
+    Matrix m_neg = m.neg();
+    std::vector<std::vector<float>> expected_data = {{-1.0f, -2.0f}, {-3.0f, -4.0f}};
+    Matrix expected(expected_data);
+    EXPECT_TRUE(m_neg.equal(expected));
 }
 
-TEST(MatrixTest, Add) {
-    std::vector<std::vector<float>> data1 = {{1, 2}, {3, 4}};
-    std::vector<std::vector<float>> data2 = {{5, 6}, {7, 8}};
+TEST(MatrixTest, AddMatrix) {
+    std::vector<std::vector<float>> data1 = {{1.0f, 2.0f}, {3.0f, 4.0f}};
     Matrix m1(data1);
+    std::vector<std::vector<float>> data2 = {{5.0f, 6.0f}, {7.0f, 8.0f}};
     Matrix m2(data2);
-    Matrix result = m1.add(m2);
-    EXPECT_EQ(result.at(0, 0), 6);
-    EXPECT_EQ(result.at(0, 1), 8);
-    EXPECT_EQ(result.at(1, 0), 10);
-    EXPECT_EQ(result.at(1, 1), 12);
+    Matrix m_add = m1.add(m2);
+    std::vector<std::vector<float>> expected_data = {{6.0f, 8.0f}, {10.0f, 12.0f}};
+    Matrix expected(expected_data);
+    EXPECT_TRUE(m_add.equal(expected));
 }
 
-TEST(MatrixTest, Sub) {
-    std::vector<std::vector<float>> data1 = {{5, 6}, {7, 8}};
-    std::vector<std::vector<float>> data2 = {{1, 2}, {3, 4}};
+TEST(MatrixTest, SubMatrix) {
+    std::vector<std::vector<float>> data1 = {{1.0f, 2.0f}, {3.0f, 4.0f}};
     Matrix m1(data1);
+    std::vector<std::vector<float>> data2 = {{5.0f, 6.0f}, {7.0f, 8.0f}};
     Matrix m2(data2);
-    Matrix result = m1.sub(m2);
-    EXPECT_EQ(result.at(0, 0), 4);
-    EXPECT_EQ(result.at(0, 1), 4);
-    EXPECT_EQ(result.at(1, 0), 4);
-    EXPECT_EQ(result.at(1, 1), 4);
+    Matrix m_sub = m1.sub(m2);
+    std::vector<std::vector<float>> expected_data = {{-4.0f, -4.0f}, {-4.0f, -4.0f}};
+    Matrix expected(expected_data);
+    EXPECT_TRUE(m_sub.equal(expected));
 }
 
-TEST(MatrixTest, Multiply) {
-    std::vector<std::vector<float>> data1 = {{1, 2}, {3, 4}};
-    std::vector<std::vector<float>> data2 = {{5, 6}, {7, 8}};
+TEST(MatrixTest, MultiplyMatrix) {
+    std::vector<std::vector<float>> data1 = {{1.0f, 2.0f}, {3.0f, 4.0f}};
     Matrix m1(data1);
+    std::vector<std::vector<float>> data2 = {{5.0f, 6.0f}, {7.0f, 8.0f}};
     Matrix m2(data2);
-    Matrix result = m1.multiply(m2);
-    EXPECT_EQ(result.at(0, 0), 5);
-    EXPECT_EQ(result.at(0, 1), 12);
-    EXPECT_EQ(result.at(1, 0), 21);
-    EXPECT_EQ(result.at(1, 1), 32);
+    Matrix m_multiply = m1.multiply(m2);
+    std::vector<std::vector<float>> expected_data = {{5.0f, 12.0f}, {21.0f, 32.0f}};
+    Matrix expected(expected_data);
+    EXPECT_TRUE(m_multiply.equal(expected));
 }
 
-TEST(MatrixTest, Divide) {
-    std::vector<std::vector<float>> data1 = {{10, 20}, {30, 40}};
-    std::vector<std::vector<float>> data2 = {{2, 4}, {5, 8}};
+TEST(MatrixTest, DivideMatrix) {
+    std::vector<std::vector<float>> data1 = {{1.0f, 2.0f}, {3.0f, 4.0f}};
     Matrix m1(data1);
+    std::vector<std::vector<float>> data2 = {{5.0f, 6.0f}, {7.0f, 8.0f}};
     Matrix m2(data2);
-    Matrix result = m1.divide(m2);
-    EXPECT_EQ(result.at(0, 0), 5);
-    EXPECT_EQ(result.at(0, 1), 5);
-    EXPECT_EQ(result.at(1, 0), 6);
-    EXPECT_EQ(result.at(1, 1), 5);
+    Matrix m_divide = m1.divide(m2);
+    std::vector<std::vector<float>> expected_data = {{1.0f / 5.0f, 2.0f / 6.0f}, {3.0f / 7.0f, 4.0f / 8.0f}};
+    Matrix expected(expected_data);
+    EXPECT_TRUE(m_divide.equal(expected));
 }
 
-TEST(MatrixTest, OperatorAddMatrix) {
-    std::vector<std::vector<float>> data1 = {{1, 2}, {3, 4}};
-    std::vector<std::vector<float>> data2 = {{5, 6}, {7, 8}};
+TEST(MatrixTest, PowMatrix) {
+    std::vector<std::vector<float>> data1 = {{1.0f, 2.0f}, {3.0f, 4.0f}};
     Matrix m1(data1);
-    Matrix m2(data2);
-    Matrix result = m1 + m2;
-    EXPECT_EQ(result.at(0, 0), 6);
-    EXPECT_EQ(result.at(0, 1), 8);
-    EXPECT_EQ(result.at(1, 0), 10);
-    EXPECT_EQ(result.at(1, 1), 12);
+    Matrix m2 = Matrix::full(2, 2, 2.0f);
+    Matrix m_pow = m1.pow(m2);
+    std::vector<std::vector<float>> expected_data = {{1.0f, 4.0f}, {9.0f, 16.0f}};
+    Matrix expected(expected_data);
+    EXPECT_TRUE(m_pow.equal(expected));
 }
 
-TEST(MatrixTest, OperatorSubMatrix) {
-    std::vector<std::vector<float>> data1 = {{5, 6}, {7, 8}};
-    std::vector<std::vector<float>> data2 = {{1, 2}, {3, 4}};
-    Matrix m1(data1);
-    Matrix m2(data2);
-    Matrix result = m1 - m2;
-    EXPECT_EQ(result.at(0, 0), 4);
-    EXPECT_EQ(result.at(0, 1), 4);
-    EXPECT_EQ(result.at(1, 0), 4);
-    EXPECT_EQ(result.at(1, 1), 4);
-}
-
-TEST(MatrixTest, OperatorMulMatrix) {
-    std::vector<std::vector<float>> data1 = {{1, 2}, {3, 4}};
-    std::vector<std::vector<float>> data2 = {{5, 6}, {7, 8}};
-    Matrix m1(data1);
-    Matrix m2(data2);
-    Matrix result = m1 * m2;
-    EXPECT_EQ(result.at(0, 0), 5);
-    EXPECT_EQ(result.at(0, 1), 12);
-    EXPECT_EQ(result.at(1, 0), 21);
-    EXPECT_EQ(result.at(1, 1), 32);
-}
-
-TEST(MatrixTest, OperatorDivMatrix) {
-    std::vector<std::vector<float>> data1 = {{10, 20}, {30, 40}};
-    std::vector<std::vector<float>> data2 = {{2, 4}, {5, 8}};
-    Matrix m1(data1);
-    Matrix m2(data2);
-    Matrix result = m1 / m2;
-    EXPECT_EQ(result.at(0, 0), 5);
-    EXPECT_EQ(result.at(0, 1), 5);
-    EXPECT_EQ(result.at(1, 0), 6);
-    EXPECT_EQ(result.at(1, 1), 5);
-}
-
-TEST(MatrixTest, Pow) {
-    std::vector<std::vector<float>> data1 = {{1, 2}, {3, 4}};
-    std::vector<std::vector<float>> data2 = {{2, 2}, {2, 2}};
-    Matrix m1(data1);
-    Matrix m2(data2);
-    Matrix result = m1.pow(m2);
-    EXPECT_EQ(result.at(0, 0), 1);
-    EXPECT_EQ(result.at(0, 1), 4);
-    EXPECT_EQ(result.at(1, 0), 9);
-    EXPECT_EQ(result.at(1, 1), 16);
-}
-
-TEST(MatrixTest, OperatorAddScalar) {
-    std::vector<std::vector<float>> data = {{1, 2}, {3, 4}};
+TEST(MatrixTest, AddScalar) {
+    std::vector<std::vector<float>> data = {{1.0f, 2.0f}, {3.0f, 4.0f}};
     Matrix m(data);
-    Matrix result = m + 5.0f;
-    EXPECT_EQ(result.at(0, 0), 6);
-    EXPECT_EQ(result.at(0, 1), 7);
-    EXPECT_EQ(result.at(1, 0), 8);
-    EXPECT_EQ(result.at(1, 1), 9);
+    Matrix m_add = m.add(1);
+    std::vector<std::vector<float>> expected_data = {{2.0f, 3.0f}, {4.0f, 5.0f}};
+    Matrix expected(expected_data);
+    EXPECT_TRUE(m_add.equal(expected));
 }
 
-TEST(MatrixTest, OperatorSubScalar) {
-    std::vector<std::vector<float>> data = {{5, 6}, {7, 8}};
+TEST(MatrixTest, SubScalar) {
+    std::vector<std::vector<float>> data = {{1.0f, 2.0f}, {3.0f, 4.0f}};
     Matrix m(data);
-    Matrix result = m - 2.0f;
-    EXPECT_EQ(result.at(0, 0), 3);
-    EXPECT_EQ(result.at(0, 1), 4);
-    EXPECT_EQ(result.at(1, 0), 5);
-    EXPECT_EQ(result.at(1, 1), 6);
+    Matrix m_sub = m.sub(1);
+    std::vector<std::vector<float>> expected_data = {{0.0f, 1.0f}, {2.0f, 3.0f}};
+    Matrix expected(expected_data);
+    EXPECT_TRUE(m_sub.equal(expected));
 }
 
-TEST(MatrixTest, OperatorMulScalar) {
-    std::vector<std::vector<float>> data = {{1, 2}, {3, 4}};
+TEST(MatrixTest, MultiplyScalar) {
+    std::vector<std::vector<float>> data = {{1.0f, 2.0f}, {3.0f, 4.0f}};
     Matrix m(data);
-    Matrix result = m * 2.0f;
-    EXPECT_EQ(result.at(0, 0), 2);
-    EXPECT_EQ(result.at(0, 1), 4);
-    EXPECT_EQ(result.at(1, 0), 6);
-    EXPECT_EQ(result.at(1, 1), 8);
+    Matrix m_multiply = m.multiply(2);
+    std::vector<std::vector<float>> expected_data = {{2.0f, 4.0f}, {6.0f, 8.0f}};
+    Matrix expected(expected_data);
+    EXPECT_TRUE(m_multiply.equal(expected));
 }
 
-TEST(MatrixTest, OperatorDivScalar) {
-    std::vector<std::vector<float>> data = {{10, 20}, {30, 40}};
+TEST(MatrixTest, DivideScalar) {
+    std::vector<std::vector<float>> data = {{1.0f, 2.0f}, {3.0f, 4.0f}};
     Matrix m(data);
-    Matrix result = m / 2.0f;
-    EXPECT_EQ(result.at(0, 0), 5);
-    EXPECT_EQ(result.at(0, 1), 10);
-    EXPECT_EQ(result.at(1, 0), 15);
-    EXPECT_EQ(result.at(1, 1), 20);
-}
-
-TEST(MatrixTest, OperatorAddScalarRight) {
-    std::vector<std::vector<float>> data = {{1, 2}, {3, 4}};
-    Matrix m(data);
-    Matrix result = 5.0f + m;
-    EXPECT_EQ(result.at(0, 0), 6);
-    EXPECT_EQ(result.at(0, 1), 7);
-    EXPECT_EQ(result.at(1, 0), 8);
-    EXPECT_EQ(result.at(1, 1), 9);
-}
-
-TEST(MatrixTest, OperatorSubScalarRight) {
-    std::vector<std::vector<float>> data = {{5, 6}, {7, 8}};
-    Matrix m(data);
-    Matrix result = 10.0f - m;
-    EXPECT_EQ(result.at(0, 0), 5);
-    EXPECT_EQ(result.at(0, 1), 4);
-    EXPECT_EQ(result.at(1, 0), 3);
-    EXPECT_EQ(result.at(1, 1), 2);
-}
-
-TEST(MatrixTest, OperatorMulScalarRight) {
-    std::vector<std::vector<float>> data = {{1, 2}, {3, 4}};
-    Matrix m(data);
-    Matrix result = 2.0f * m;
-    EXPECT_EQ(result.at(0, 0), 2);
-    EXPECT_EQ(result.at(0, 1), 4);
-    EXPECT_EQ(result.at(1, 0), 6);
-    EXPECT_EQ(result.at(1, 1), 8);
-}
-
-TEST(MatrixTest, OperatorDivScalarRight) {
-    std::vector<std::vector<float>> data = {{10, 20}, {30, 40}};
-    Matrix m(data);
-    Matrix result = 80.0f / m;
-    EXPECT_EQ(result.at(0, 0), 8);
-    EXPECT_EQ(result.at(0, 1), 4);
-    EXPECT_EQ(result.at(1, 0), 2.66666675f);
-    EXPECT_EQ(result.at(1, 1), 2);
+    Matrix m_divide = m.divide(2);
+    std::vector<std::vector<float>> expected_data = {{0.5f, 1.0f}, {1.5f, 2.0f}};
+    Matrix expected(expected_data);
+    EXPECT_TRUE(m_divide.equal(expected));
 }
 
 TEST(MatrixTest, PowScalar) {
-    std::vector<std::vector<float>> data = {{1, 2}, {3, 4}};
+    std::vector<std::vector<float>> data = {{1.0f, 2.0f}, {3.0f, 4.0f}};
     Matrix m(data);
-    Matrix result = m.pow(2.0f);
-    EXPECT_EQ(result.at(0, 0), 1);
-    EXPECT_EQ(result.at(0, 1), 4);
-    EXPECT_EQ(result.at(1, 0), 9);
-    EXPECT_EQ(result.at(1, 1), 16);
+    Matrix m_pow = m.pow(2);
+    std::vector<std::vector<float>> expected_data = {{1.0f, 4.0f}, {9.0f, 16.0f}};
+    Matrix expected(expected_data);
+    EXPECT_TRUE(m_pow.equal(expected));
+}
+
+TEST(MatrixTest, NegOperator) {
+    std::vector<std::vector<float>> data = {{1.0f, 2.0f}, {3.0f, 4.0f}};
+    Matrix m(data);
+    Matrix m_neg = -m;
+    std::vector<std::vector<float>> expected_data = {{-1.0f, -2.0f}, {-3.0f, -4.0f}};
+    Matrix expected(expected_data);
+    EXPECT_TRUE(m_neg.equal(expected));
+}
+
+TEST(MatrixTest, AddOperator) {
+    std::vector<std::vector<float>> data1 = {{1.0f, 2.0f}, {3.0f, 4.0f}};
+    Matrix m1(data1);
+    std::vector<std::vector<float>> data2 = {{5.0f, 6.0f}, {7.0f, 8.0f}};
+    Matrix m2(data2);
+    Matrix m_add = m1 + m2;
+    std::vector<std::vector<float>> expected_data = {{6.0f, 8.0f}, {10.0f, 12.0f}};
+    Matrix expected(expected_data);
+    EXPECT_TRUE(m_add.equal(expected));
+}
+
+TEST(MatrixTest, SubOperator) {
+    std::vector<std::vector<float>> data1 = {{1.0f, 2.0f}, {3.0f, 4.0f}};
+    Matrix m1(data1);
+    std::vector<std::vector<float>> data2 = {{5.0f, 6.0f}, {7.0f, 8.0f}};
+    Matrix m2(data2);
+    Matrix m_sub = m1 - m2;
+    std::vector<std::vector<float>> expected_data = {{-4.0f, -4.0f}, {-4.0f, -4.0f}};
+    Matrix expected(expected_data);
+    EXPECT_TRUE(m_sub.equal(expected));
+}
+
+TEST(MatrixTest, MultiplyOperator) {
+    std::vector<std::vector<float>> data1 = {{1.0f, 2.0f}, {3.0f, 4.0f}};
+    Matrix m1(data1);
+    std::vector<std::vector<float>> data2 = {{5.0f, 6.0f}, {7.0f, 8.0f}};
+    Matrix m2(data2);
+    Matrix m_multiply = m1 * m2;
+    std::vector<std::vector<float>> expected_data = {{5.0f, 12.0f}, {21.0f, 32.0f}};
+    Matrix expected(expected_data);
+    EXPECT_TRUE(m_multiply.equal(expected));
+}
+
+TEST(MatrixTest, DivideOperator) {
+    std::vector<std::vector<float>> data1 = {{1.0f, 2.0f}, {3.0f, 4.0f}};
+    Matrix m1(data1);
+    std::vector<std::vector<float>> data2 = {{5.0f, 6.0f}, {7, 8}};
+    Matrix m2(data2);
+    Matrix m_divide = m1 / m2;
+    std::vector<std::vector<float>> expected_data = {{1.0f / 5.0f, 2.0f / 6.0f}, {3.0f / 7.0f, 4.0f / 8.0f}};
+    Matrix expected(expected_data);
+    EXPECT_TRUE(m_divide.equal(expected));
+}
+
+TEST(MatrixTest, AddScalarOperator) {
+    std::vector<std::vector<float>> data = {{1.0f, 2.0f}, {3.0f, 4.0f}};
+    Matrix m(data);
+    Matrix m_add = m + 1.0f;
+    std::vector<std::vector<float>> expected_data = {{2.0f, 3.0f}, {4.0f, 5.0f}};
+    Matrix expected(expected_data);
+    EXPECT_TRUE(m_add.equal(expected));
+}
+
+TEST(MatrixTest, SubScalarOperator) {
+    std::vector<std::vector<float>> data = {{1.0f, 2.0f}, {3.0f, 4.0f}};
+    Matrix m(data);
+    Matrix m_sub = m - 1.0f;
+    std::vector<std::vector<float>> expected_data = {{0.0f, 1.0f}, {2.0f, 3.0f}};
+    Matrix expected(expected_data);
+    EXPECT_TRUE(m_sub.equal(expected));
+}
+
+TEST(MatrixTest, MultiplyScalarOperator) {
+    std::vector<std::vector<float>> data = {{1.0f, 2.0f}, {3.0f, 4.0f}};
+    Matrix m(data);
+    Matrix m_multiply = m * 2.0f;
+    std::vector<std::vector<float>> expected_data = {{2.0f, 4.0f}, {6.0f, 8.0f}};
+    Matrix expected(expected_data);
+    EXPECT_TRUE(m_multiply.equal(expected));
+}
+
+TEST(MatrixTest, DivideScalarOperator) {
+    std::vector<std::vector<float>> data = {{1.0f, 2.0f}, {3.0f, 4.0f}};
+    Matrix m(data);
+    Matrix m_divide = m / 2.0f;
+    std::vector<std::vector<float>> expected_data = {{0.5f, 1}, {1.5f, 2.0f}};
+    Matrix expected(expected_data);
+    EXPECT_TRUE(m_divide.equal(expected));
+}
+
+TEST(MatrixTest, PowScalarOperator) {
+    std::vector<std::vector<float>> data = {{1.0f, 2.0f}, {3.0f, 4.0f}};
+    Matrix m(data);
+    Matrix m_pow = m.pow(2.0f);
+    std::vector<std::vector<float>> expected_data = {{1.0f, 4.0f}, {9, 16.0f}};
+    Matrix expected(expected_data);
+    EXPECT_TRUE(m_pow.equal(expected));
+}
+
+TEST(MatrixTest, LeftAddScalarOperator) {
+    std::vector<std::vector<float>> data = {{1.0f, 2.0f}, {3.0f, 4.0f}};
+    Matrix m(data);
+    Matrix m_add = 1.0f + m;
+    std::vector<std::vector<float>> expected_data = {{2, 3}, {4, 5}};
+    Matrix expected(expected_data);
+    EXPECT_TRUE(m_add.equal(expected));
+}
+
+TEST(MatrixTest, LeftSubScalarOperator) {
+    std::vector<std::vector<float>> data = {{1.0f, 2.0f}, {3.0f, 4.0f}};
+    Matrix m(data);
+    Matrix m_sub = 1.0f - m;
+    std::vector<std::vector<float>> expected_data = {{0, -1}, {-2, -3}};
+    Matrix expected(expected_data);
+    EXPECT_TRUE(m_sub.equal(expected));
+}
+
+TEST(MatrixTest, LeftMultiplyScalarOperator) {
+    std::vector<std::vector<float>> data = {{1.0f, 2.0f}, {3.0f, 4.0f}};
+    Matrix m(data);
+    Matrix m_multiply = 2.0f * m;
+    std::vector<std::vector<float>> expected_data = {{2, 4.0f}, {6.0f, 8}};
+    Matrix expected(expected_data);
+    EXPECT_TRUE(m_multiply.equal(expected));
+}
+
+TEST(MatrixTest, LeftDivideScalarOperator) {
+    std::vector<std::vector<float>> data = {{1.0f, 2.0f}, {3.0f, 4.0f}};
+    Matrix m(data);
+    Matrix m_divide = 2.0f / m;
+    std::vector<std::vector<float>> expected_data = {{2, 1}, {2.0f / 3.0f, 0.5}};
+    Matrix expected(expected_data);
+    EXPECT_TRUE(m_divide.equal(expected));
 }
 
 TEST(MatrixTest, Matmul) {
-    std::vector<std::vector<float>> data1 = {{1, 2}, {3, 4}};
-    std::vector<std::vector<float>> data2 = {{5, 6}, {7, 8}};
+    std::vector<std::vector<float>> data1 = {{1.0f, 2.0f}, {3.0f, 4.0f}};
     Matrix m1(data1);
+    std::vector<std::vector<float>> data2 = {{5.0f, 6.0f}, {7, 8}};
     Matrix m2(data2);
-    Matrix result = m1.matmul(m2);
-    EXPECT_EQ(result.at(0, 0), 19);
-    EXPECT_EQ(result.at(0, 1), 22);
-    EXPECT_EQ(result.at(1, 0), 43);
-    EXPECT_EQ(result.at(1, 1), 50);
+    Matrix m_matmul = m1.matmul(m2);
+    std::vector<std::vector<float>> expected_data = {{19, 22.0f}, {43.0f, 50}};
+    Matrix expected(expected_data);
+    EXPECT_TRUE(m_matmul.equal(expected));
 }
 
 TEST(MatrixTest, Sqrt) {
-    std::vector<std::vector<float>> data = {{1, 4}, {9, 16}};
+    std::vector<std::vector<float>> data = {{1.0f, 4.0f}, {9, 16.0f}};
     Matrix m(data);
-    Matrix result = m.sqrt();
-    EXPECT_EQ(result.at(0, 0), 1);
-    EXPECT_EQ(result.at(0, 1), 2);
-    EXPECT_EQ(result.at(1, 0), 3);
-    EXPECT_EQ(result.at(1, 1), 4);
+    Matrix m_sqrt = m.sqrt();
+    std::vector<std::vector<float>> expected_data = {{1.0f, 2.0f}, {3.0f, 4.0f}};
+    Matrix expected(expected_data);
+    EXPECT_TRUE(m_sqrt.equal(expected));
 }
 
 TEST(MatrixTest, Exp) {
-    std::vector<std::vector<float>> data = {{0, 1}, {2, 3}};
+    std::vector<std::vector<float>> data = {{0.0f, 1}, {2, 3}};
     Matrix m(data);
-    Matrix result = m.exp();
-    EXPECT_NEAR(result.at(0, 0), 1, 1e-5);
-    EXPECT_NEAR(result.at(0, 1), 2.71828, 1e-5);
-    EXPECT_NEAR(result.at(1, 0), 7.38906, 1e-5);
-    EXPECT_NEAR(result.at(1, 1), 20.0855, 5e-5);
+    Matrix m_exp = m.exp();
+    std::vector<std::vector<float>> expected_data = {{1.0f, std::exp(1)}, {std::exp(2), std::exp(3)}};
+    Matrix expected(expected_data);
+    EXPECT_TRUE(m_exp.equal(expected));
 }
 
 TEST(MatrixTest, Log) {
-    std::vector<std::vector<float>> data = {{1, 2.71828}, {7.38906, 20.0855}};
+    std::vector<std::vector<float>> data = {{1.0f, 2.0f}, {3.0f, 4.0f}};
     Matrix m(data);
-    Matrix result = m.log();
-    EXPECT_NEAR(result.at(0, 0), 0, 1e-5);
-    EXPECT_NEAR(result.at(0, 1), 1, 1e-5);
-    EXPECT_NEAR(result.at(1, 0), 2, 1e-5);
-    EXPECT_NEAR(result.at(1, 1), 3, 1e-5);
+    Matrix m_log = m.log();
+    std::vector<std::vector<float>> expected_data = {{0, std::log(2)}, {std::log(3), std::log(4)}};
+    Matrix expected(expected_data);
+    EXPECT_TRUE(m_log.equal(expected));
 }
 
 TEST(MatrixTest, Tanh) {
-    std::vector<std::vector<float>> data = {{0, 1}, {-1, 2}};
+    std::vector<std::vector<float>> data = {{0, 1}, {2, 3}};
     Matrix m(data);
-    Matrix result = m.tanh();
-    EXPECT_NEAR(result.at(0, 0), 0, 1e-5);
-    EXPECT_NEAR(result.at(0, 1), 0.761594, 1e-5);
-    EXPECT_NEAR(result.at(1, 0), -0.761594, 1e-5);
-    EXPECT_NEAR(result.at(1, 1), 0.964028, 1e-5);
+    Matrix m_tanh = m.tanh();
+    std::vector<std::vector<float>> expected_data = {{0, std::tanh(1)}, {std::tanh(2), std::tanh(3)}};
+    Matrix expected(expected_data);
+    EXPECT_TRUE(m_tanh.equal(expected));
 }
 
 TEST(MatrixTest, Sigmoid) {
-    std::vector<std::vector<float>> data = {{0, 1}, {-1, 2}};
+    std::vector<std::vector<float>> data = {{0, 1}, {2, 3}};
     Matrix m(data);
-    Matrix result = m.sigmoid();
-    EXPECT_NEAR(result.at(0, 0), 0.5, 1e-5);
-    EXPECT_NEAR(result.at(0, 1), 0.731059, 1e-5);
-    EXPECT_NEAR(result.at(1, 0), 0.268941, 1e-5);
-    EXPECT_NEAR(result.at(1, 1), 0.880797, 1e-5);
+    Matrix m_sigmoid = m.sigmoid();
+    std::vector<std::vector<float>> expected_data = {{0.5, 1 / (1 + std::exp(-1))}, {1 / (1 + std::exp(-2)), 1 / (1 + std::exp(-3))}};
+    Matrix expected(expected_data);
+    EXPECT_TRUE(m_sigmoid.equal(expected));
 }
 
 TEST(MatrixTest, Sum) {
-    std::vector<std::vector<float>> data = {{1, 2}, {3, 4}};
+    std::vector<std::vector<float>> data = {{1.0f, 2.0f}, {3.0f, 4.0f}};
     Matrix m(data);
-    Matrix result = m.sum(std::nullopt);
-    EXPECT_EQ(result.at(0, 0), 10);
+    Matrix m_sum = m.sum();
+    std::vector<std::vector<float>> expected_data = {{4.0f}};
+    Matrix expected(expected_data);
+    EXPECT_TRUE(m_sum.equal(expected));
+}
 
-    Matrix result_axis0 = m.sum(0);
-    EXPECT_EQ(result_axis0.at(0, 0), 4);
-    EXPECT_EQ(result_axis0.at(0, 1), 6);
+TEST(MatrixTest, SumAxis0) {
+    std::vector<std::vector<float>> data = {{1.0f, 2.0f}, {3.0f, 4.0f}};
+    Matrix m(data);
+    Matrix m_sum = m.sum(0);
+    std::vector<std::vector<float>> expected_data = {{4.0f, 6.0f}};
+    Matrix expected(expected_data);
+    EXPECT_TRUE(m_sum.equal(expected));
+}
 
-    Matrix result_axis1 = m.sum(1);
-    EXPECT_EQ(result_axis1.at(0, 0), 3);
-    EXPECT_EQ(result_axis1.at(1, 0), 7);
+TEST(MatrixTest, SumAxis1) {
+    std::vector<std::vector<float>> data = {{1.0f, 2.0f}, {3.0f, 4.0f}};
+    Matrix m(data);
+    Matrix m_sum = m.sum(1);
+    std::vector<std::vector<float>> expected_data = {{3.0f}, {7.0f}};
+    Matrix expected(expected_data);
+    EXPECT_TRUE(m_sum.equal(expected));
 }
 
 TEST(MatrixTest, Softmax) {
-    std::vector<std::vector<float>> data = {{1, 2}, {3, 4}};
+    std::vector<std::vector<float>> data = {{1.0f, 2.0f}, {3.0f, 4.0f}};
     Matrix m(data);
-    Matrix result = m.softmax(std::nullopt);
-    float sum = result.at(0, 0) + result.at(0, 1) + result.at(1, 0) + result.at(1, 1);
-    EXPECT_NEAR(sum, 1.0, 1e-5);
+    Matrix m_softmax = m.softmax();
+    std::vector<std::vector<float>> expected_data = {{1 / (1 + std::exp(1)), 1 / (1 + std::exp(2))}, {1 / (1 + std::exp(3)), 1 / (1 + std::exp(4))}};
+    Matrix expected(expected_data);
+    EXPECT_TRUE(m_softmax.equal(expected));
+}
 
-    Matrix result_axis0 = m.softmax(0);
-    EXPECT_NEAR(result_axis0.at(0, 0) + result_axis0.at(1, 0), 1.0, 1e-5);
-    EXPECT_NEAR(result_axis0.at(0, 1) + result_axis0.at(1, 1), 1.0, 1e-5);
+TEST(MatrixTest, SoftmaxAxis0) {
+    std::vector<std::vector<float>> data = {{1.0f, 2.0f}, {3.0f, 4.0f}};
+    Matrix m(data);
+    Matrix m_softmax = m.softmax(0);
+    std::vector<std::vector<float>> expected_data = {{1 / (1 + std::exp(1)), 1 / (1 + std::exp(3))}, {1 / (1 + std::exp(2)), 1 / (1 + std::exp(4))}};
+    Matrix expected(expected_data);
+    EXPECT_TRUE(m_softmax.equal(expected));
+}
 
-    Matrix result_axis1 = m.softmax(1);
-    EXPECT_NEAR(result_axis1.at(0, 0) + result_axis1.at(0, 1), 1.0, 1e-5);
-    EXPECT_NEAR(result_axis1.at(1, 0) + result_axis1.at(1, 1), 1.0, 1e-5);
+TEST(MatrixTest, SoftmaxAxis1) {
+    std::vector<std::vector<float>> data = {{1.0f, 2.0f}, {3.0f, 4.0f}};
+    Matrix m(data);
+    Matrix m_softmax = m.softmax(1);
+    std::vector<std::vector<float>> expected_data = {{1 / (1 + std::exp(1)), 1 / (1 + std::exp(2))}, {1 / (1 + std::exp(3)), 1 / (1 + std::exp(4))}};
+    Matrix expected(expected_data);
+    EXPECT_TRUE(m_softmax.equal(expected));
 }
 
 TEST(MatrixTest, Equal) {
-    std::vector<std::vector<float>> data1 = {{1, 2}, {3, 4}};
-    std::vector<std::vector<float>> data2 = {{1, 2}, {3, 4}};
+    std::vector<std::vector<float>> data1 = {{1.0f, 2.0f}, {3.0f, 4.0f}};
     Matrix m1(data1);
+    std::vector<std::vector<float>> data2 = {{1.0f, 2.0f}, {3.0f, 4.0f}};
     Matrix m2(data2);
     EXPECT_TRUE(m1.equal(m2));
 }
 
-TEST(MatrixTest, AllClose) {
-    std::vector<std::vector<float>> data1 = {{1.00001, 2.00001}, {3.00001, 4.00001}};
-    std::vector<std::vector<float>> data2 = {{1.00002, 2.00002}, {3.00002, 4.00002}};
+TEST(MatrixTest, NotEqual) {
+    std::vector<std::vector<float>> data1 = {{1.0f, 2.0f}, {3.0f, 4.0f}};
     Matrix m1(data1);
+    std::vector<std::vector<float>> data2 = {{1.0f, 2.0f}, {3.0f, 5}};
     Matrix m2(data2);
-    EXPECT_TRUE(m1.all_close(m2, 1e-4));
+    EXPECT_FALSE(m1.equal(m2));
 }
 
-int main(int argc, char **argv) {
-    ::testing::InitGoogleTest(&argc, argv);
-    return RUN_ALL_TESTS();
+TEST(MatrixTest, AllClose) {
+    float tolerance = 1e-5;
+    float within_tolerance = 1e-6.0f;
+    std::vector<std::vector<float>> data1 = {{1.0f, 2.0f}, {3.0f, 4.0f}};
+    Matrix m1(data1);
+    std::vector<std::vector<float>> data2 = {{1.0f, 2.0f}, {3.0f, 4.0f}};
+    Matrix m2(data2);
+    m2 = m2 + within_tolerance;
+    EXPECT_TRUE(m1.all_close(m2, tolerance));
+}
+
+TEST(MatrixTest, NotAllClose) {
+    float tolerance = 1e-5;
+    float beyond_tolerance = 1e-4;
+    std::vector<std::vector<float>> data1 = {{1.0f, 2.0f}, {3.0f, 4.0f}};
+    Matrix m1(data1);
+    std::vector<std::vector<float>> data2 = {{1.0f, 2.0f}, {3.0f, 4.0f}};
+    Matrix m2(data2);
+    m2 = m2 + beyond_tolerance;
+    EXPECT_FALSE(m1.all_close(m2, tolerance));
+}
+
+TEST(MatrixTest, Set) {
+    std::vector<std::vector<float>> data = {{1.0f, 2.0f}, {3.0f, 4.0f}};
+    Matrix m(data);
+    m.set(0, 0, 5);
+    std::vector<std::vector<float>> expected_data = {{5.0f, 2.0f}, {3.0f, 4.0f}};
+    Matrix expected(expected_data);
+    EXPECT_TRUE(m.equal(expected));
+}
+
+TEST(MatrixTest, At) {
+    std::vector<std::vector<float>> data = {{1.0f, 2.0f}, {3.0f, 4.0f}};
+    Matrix m(data);
+    EXPECT_EQ(m.at(0, 0), 1);
+    EXPECT_EQ(m.at(0, 1), 2);
+    EXPECT_EQ(m.at(1.0f, 0), 3);
+    EXPECT_EQ(m.at(1.0f, 1), 4);
+}
+
+TEST(MatrixTest, Scalar) {
+    std::vector<std::vector<float>> data = {{1.0f}};
+    Matrix m(data);
+    EXPECT_EQ(m.scalar(), 1.0f);
+}
+
+TEST(MatrixTest, DimsSameAs) {
+    std::vector<std::vector<float>> data1 = {{1.0f, 2.0f}, {3.0f, 4.0f}};
+    Matrix m1(data1);
+    std::vector<std::vector<float>> data2 = {{5.0f, 6.0f}, {7.0f, 8.0f}};
+    Matrix m2(data2);
+    EXPECT_TRUE(m1.dims_same_as(m2));
+}
+
+TEST(MatrixTest, DimsNotSameAs) {
+    std::vector<std::vector<float>> data1 = {{1.0f, 2.0f}, {3.0f, 4.0f}};
+    Matrix m1(data1);
+    std::vector<std::vector<float>> data2 = {{5.0f, 6.0f}};
+    Matrix m2(data2);
+    EXPECT_FALSE(m1.dims_same_as(m2));
+}
+
+TEST(MatrixTest, InnerDimSameAs) {
+    std::vector<std::vector<float>> data1 = {{1.0f, 2.0f}, {3.0f, 4.0f}};
+    Matrix m1(data1);
+    std::vector<std::vector<float>> data2 = {{5.0f, 6.0f}, {7.0f, 8.0f}};
+    Matrix m2(data2);
+    EXPECT_TRUE(m1.inner_dim_same_as(m2));
+}
+
+TEST(MatrixTest, InnerDimNotSameAs) {
+    std::vector<std::vector<float>> data1 = {{1.0f, 2.0f}, {3.0f, 4.0f}};
+    Matrix m1(data1);
+    std::vector<std::vector<float>> data2 = {{5.0f, 6.0f}};
+    Matrix m2(data2);
+    EXPECT_FALSE(m1.inner_dim_same_as(m2));
 }

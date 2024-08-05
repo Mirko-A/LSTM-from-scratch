@@ -1,3 +1,7 @@
-venv
+# vscode
 .vscode
+# build output
 cpp/build*
+# python
+venv
+__pycache__

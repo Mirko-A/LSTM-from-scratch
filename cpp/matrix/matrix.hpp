@@ -5,8 +5,14 @@
 
 class Matrix {
 public:
-    Matrix() = delete;
+    Matrix();
     Matrix(std::vector<std::vector<float>> data);
+    // copy and move constructor
+    Matrix(const Matrix &other);
+    Matrix(Matrix &&other);
+    // copy and move assignment
+    Matrix &operator=(const Matrix &other);
+    Matrix &operator=(Matrix &&other);
 
     static Matrix full(uint32_t row_n, uint32_t col_n, float value);
     static Matrix zeros(uint32_t row_n, uint32_t col_n);
@@ -16,10 +22,17 @@ public:
     static Matrix ones_like(const Matrix &other);
     static Matrix arange(uint32_t row_n, uint32_t col_n, uint32_t start = 0);
     static Matrix uniform(uint32_t row_n, uint32_t col_n, float low, float high);
+    static Matrix concatenate(uint8_t axis, const std::vector<Matrix> &matrices);
 
     Matrix transpose() const;
     Matrix T() const;
-    Matrix expand(int axis, uint32_t new_size) const;
+
+    Matrix expand(uint8_t axis, uint32_t new_size) const;
+
+    Matrix pad_start(uint8_t axis, uint32_t pad_size) const;
+    Matrix pad_end(uint8_t axis, uint32_t pad_size) const;
+    Matrix shrink_start(uint8_t axis, uint32_t shrink_size) const;
+    Matrix shrink_end(uint8_t axis, uint32_t shrink_size) const;
 
     Matrix neg() const;
     Matrix add(const Matrix &other) const;
@@ -53,6 +66,7 @@ public:
 
     Matrix matmul(const Matrix &other) const;
 
+    Matrix clamp(float min, float max) const;
     Matrix sqrt() const;
     Matrix exp() const;
     Matrix log() const;
@@ -68,6 +82,8 @@ public:
     void set(uint32_t row_i, uint32_t col_i, float value);
     float at(uint32_t row_i, uint32_t col_i) const;
     float scalar() const;
+
+    std::pair<uint32_t, uint32_t> shape() const;
 
     bool dims_same_as(const Matrix &other) const;
     bool inner_dim_same_as(const Matrix &other) const;
