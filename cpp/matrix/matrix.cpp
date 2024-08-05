@@ -95,6 +95,54 @@ Matrix Matrix::uniform(uint32_t row_n, uint32_t col_n, float low, float high) {
     return Matrix(data);
 }
 
+Matrix Matrix::concatenate(uint8_t axis, const std::vector<Matrix> &matrices) {
+    assert(!matrices.empty());
+
+    if (axis == 0) {
+        uint32_t new_row_n = 0;
+        uint32_t new_col_n = matrices[0].col_n;
+
+        for (const auto &matrix : matrices) {
+            assert(matrix.col_n == new_col_n);
+            new_row_n += matrix.row_n;
+        }
+
+        std::vector<std::vector<float>> result(new_row_n, std::vector<float>(new_col_n));
+        uint32_t row_i = 0;
+        for (const auto &matrix : matrices) {
+            for (uint32_t i = 0; i < matrix.row_n; ++i) {
+                for (uint32_t j = 0; j < matrix.col_n; ++j) {
+                    result[row_i][j] = matrix.data[i][j];
+                }
+                ++row_i;
+            }
+        }
+
+        return Matrix(result);
+    } else {
+        uint32_t new_row_n = matrices[0].row_n;
+        uint32_t new_col_n = 0;
+
+        for (const auto &matrix : matrices) {
+            assert(matrix.row_n == new_row_n);
+            new_col_n += matrix.col_n;
+        }
+
+        std::vector<std::vector<float>> result(new_row_n, std::vector<float>(new_col_n));
+        uint32_t col_i = 0;
+        for (const auto &matrix : matrices) {
+            for (uint32_t i = 0; i < matrix.row_n; ++i) {
+                for (uint32_t j = 0; j < matrix.col_n; ++j) {
+                    result[i][col_i] = matrix.data[i][j];
+                }
+                col_i += matrix.col_n;
+            }
+        }
+
+        return Matrix(result);
+    }
+}
+
 Matrix Matrix::transpose() const {
     std::vector<std::vector<float>> transposed(col_n, std::vector<float>(row_n));
 
@@ -111,7 +159,7 @@ Matrix Matrix::T() const {
     return transpose();
 }
 
-Matrix Matrix::expand(int axis, uint32_t new_size) const {
+Matrix Matrix::expand(uint8_t axis, uint32_t new_size) const {
     assert(axis == 0 || axis == 1);
 
     if (axis == 0) {

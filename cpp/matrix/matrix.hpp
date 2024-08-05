@@ -22,10 +22,11 @@ public:
     static Matrix ones_like(const Matrix &other);
     static Matrix arange(uint32_t row_n, uint32_t col_n, uint32_t start = 0);
     static Matrix uniform(uint32_t row_n, uint32_t col_n, float low, float high);
+    static Matrix concatenate(uint8_t axis, const std::vector<Matrix> &matrices);
 
     Matrix transpose() const;
     Matrix T() const;
-    Matrix expand(int axis, uint32_t new_size) const;
+    Matrix expand(uint8_t axis, uint32_t new_size) const;
 
     Matrix neg() const;
     Matrix add(const Matrix &other) const;
