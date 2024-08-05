@@ -14,32 +14,41 @@ private:
     void reset_cache();
 
 private:
+    // Hyperparameters
     uint32_t input_size;
     uint32_t hidden_size;
     uint32_t output_size;
 
     float learning_rate;
 
+    // Forget gate weights
     Matrix W_f;
     Matrix b_f;
 
+    // Input gate weights
     Matrix W_i;
     Matrix b_i;
 
+    // Candidate gate weights
     Matrix W_c;
     Matrix b_c;
 
+    // Output gate weights
     Matrix W_o;
     Matrix b_o;
 
+    // Final gate weights
     Matrix W_y;
     Matrix b_y;
 
-    std::unordered_map<int, Matrix> cell_states;
-    std::unordered_map<int, Matrix> forget_gates;
-    std::unordered_map<int, Matrix> input_gates;
-    std::unordered_map<int, Matrix> candidate_gates;
-    std::unordered_map<int, Matrix> output_gates;
-    std::unordered_map<int, Matrix> activation_outputs;
-    std::unordered_map<int, Matrix> outputs;
+    // Network cache
+    std::unordered_map<int32_t, Matrix> concat_inputs;
+    std::unordered_map<int32_t, Matrix> hidden_states;
+    std::unordered_map<int32_t, Matrix> cell_states;
+    std::unordered_map<int32_t, Matrix> forget_gates;
+    std::unordered_map<int32_t, Matrix> input_gates;
+    std::unordered_map<int32_t, Matrix> candidate_gates;
+    std::unordered_map<int32_t, Matrix> output_gates;
+    std::unordered_map<int32_t, Matrix> activation_outputs;
+    std::unordered_map<int32_t, Matrix> outputs;
 };
