@@ -560,25 +560,15 @@ Matrix Matrix::sum(std::optional<uint8_t> axis) const {
     }
 }
 
-Matrix Matrix::softmax(std::optional<uint8_t> axis) const {
-    if (axis.has_value()) {
-        uint32_t ax = axis.value();
+Matrix Matrix::softmax(uint8_t axis) const {
+    assert(axis == 0 || axis == 1);
 
-        assert(ax == 0 || ax == 1);
+    Matrix exp_data = exp();
+    Matrix sum_exp = exp_data.sum(axis);
+    uint32_t expanded_size = axis == 0 ? row_n : col_n;
+    Matrix sum_exp_expanded = sum_exp.expand(axis, expanded_size);
 
-        Matrix exp_data = exp();
-        Matrix sum_exp = exp_data.sum(ax);
-        uint32_t expanded_size = axis == 0 ? row_n : col_n;
-        Matrix sum_exp_expanded = sum_exp.expand(ax, expanded_size);
-
-        return exp_data.divide(sum_exp_expanded);
-    } else {
-        Matrix exp_data = exp();
-        Matrix sum_exp = exp_data.sum(std::nullopt);
-        Matrix sum_exp_expanded = sum_exp.expand(0, row_n).expand(1, col_n);
-
-        return exp_data.divide(sum_exp_expanded);
-    }
+    return exp_data.divide(sum_exp_expanded);
 }
 
 bool Matrix::equal(const Matrix &other) const {

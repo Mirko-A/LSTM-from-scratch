@@ -1,4 +1,5 @@
 #include "matrix.hpp"
+#include <cmath>
 #include <gtest/gtest.h>
 
 TEST(MatrixTest, DefaultConstructor) {
@@ -106,7 +107,7 @@ TEST(MatrixTest, Arange) {
     EXPECT_TRUE(m.equal(expected));
 }
 
-Test(MatrixTest, ArangeFromStart) {
+TEST(MatrixTest, ArangeFromStart) {
     Matrix m = Matrix::arange(2, 2, 1);
     std::vector<std::vector<float>> expected_data = {{1.0f, 2.0f}, {3.0f, 4.0f}};
     Matrix expected(expected_data);
@@ -115,10 +116,10 @@ Test(MatrixTest, ArangeFromStart) {
 
 TEST(MatrixTest, Uniform) {
     Matrix m = Matrix::uniform(2, 2, 0.0f, 1.0f);
-    for (uint32_t i = 0; i < m.row_n(); ++i) {
-        for (uint32_t j = 0; j < m.col_n(); ++j) {
-            EXPECT_GE(m(i, j), 0.0f);
-            EXPECT_LE(m(i, j), 1.0f);
+    for (uint32_t i = 0; i < m.shape().first; ++i) {
+        for (uint32_t j = 0; j < m.shape().second; ++j) {
+            EXPECT_GE(m.at(i, j), 0.0f);
+            EXPECT_LE(m.at(i, j), 1.0f);
         }
     }
 }
@@ -141,11 +142,21 @@ TEST(MatrixTest, T) {
     EXPECT_TRUE(m_T.equal(expected));
 }
 
-TEST(MatrixTest, Expand) {
-    std::vector<std::vector<float>> data = {{1.0f, 2.0f}, {3.0f, 4.0f}};
+TEST(MatrixTest, ExpandAxis0) {
+    std::vector<std::vector<float>> data = {{1.0f, 2.0f}};
     Matrix m(data);
     Matrix m_expand = m.expand(0, 2);
-    std::vector<std::vector<float>> expected_data = {{1.0f, 2.0f}, {1.0f, 2.0f}, {3.0f, 4.0f}, {3, 4}};
+    m_expand.println();
+    std::vector<std::vector<float>> expected_data = {{1.0f, 2.0f}, {1.0f, 2.0f}};
+    Matrix expected(expected_data);
+    EXPECT_TRUE(m_expand.equal(expected));
+}
+
+TEST(MatrixTest, ExpandAxis1) {
+    std::vector<std::vector<float>> data = {{1.0f}, {2.0f}};
+    Matrix m(data);
+    Matrix m_expand = m.expand(1, 2);
+    std::vector<std::vector<float>> expected_data = {{1.0f, 1.0f}, {2.0f, 2.0f}};
     Matrix expected(expected_data);
     EXPECT_TRUE(m_expand.equal(expected));
 }
@@ -488,7 +499,7 @@ TEST(MatrixTest, Exp) {
     std::vector<std::vector<float>> data = {{0.0f, 1}, {2, 3}};
     Matrix m(data);
     Matrix m_exp = m.exp();
-    std::vector<std::vector<float>> expected_data = {{1.0f, std::exp(1)}, {std::exp(2), std::exp(3)}};
+    std::vector<std::vector<float>> expected_data = {{1.0f, std::exp(1.0f)}, {std::exp(2.0f), std::exp(3.0f)}};
     Matrix expected(expected_data);
     EXPECT_TRUE(m_exp.equal(expected));
 }
@@ -497,7 +508,7 @@ TEST(MatrixTest, Log) {
     std::vector<std::vector<float>> data = {{1.0f, 2.0f}, {3.0f, 4.0f}};
     Matrix m(data);
     Matrix m_log = m.log();
-    std::vector<std::vector<float>> expected_data = {{0, std::log(2)}, {std::log(3), std::log(4)}};
+    std::vector<std::vector<float>> expected_data = {{0, std::log(2.0f)}, {std::log(3.0f), std::log(4.0f)}};
     Matrix expected(expected_data);
     EXPECT_TRUE(m_log.equal(expected));
 }
@@ -506,7 +517,7 @@ TEST(MatrixTest, Tanh) {
     std::vector<std::vector<float>> data = {{0, 1}, {2, 3}};
     Matrix m(data);
     Matrix m_tanh = m.tanh();
-    std::vector<std::vector<float>> expected_data = {{0, std::tanh(1)}, {std::tanh(2), std::tanh(3)}};
+    std::vector<std::vector<float>> expected_data = {{0.0f, std::tanh(1.0f)}, {std::tanh(2.0f), std::tanh(3.0f)}};
     Matrix expected(expected_data);
     EXPECT_TRUE(m_tanh.equal(expected));
 }
@@ -515,7 +526,7 @@ TEST(MatrixTest, Sigmoid) {
     std::vector<std::vector<float>> data = {{0, 1}, {2, 3}};
     Matrix m(data);
     Matrix m_sigmoid = m.sigmoid();
-    std::vector<std::vector<float>> expected_data = {{0.5, 1 / (1 + std::exp(-1))}, {1 / (1 + std::exp(-2)), 1 / (1 + std::exp(-3))}};
+    std::vector<std::vector<float>> expected_data = {{0.5f, 1.0f / (1.0f + std::exp(-1.0f))}, {1.0f / (1.0f + std::exp(-2.0f)), 1.0f / (1.0f + std::exp(-3.0f))}};
     Matrix expected(expected_data);
     EXPECT_TRUE(m_sigmoid.equal(expected));
 }
@@ -524,7 +535,7 @@ TEST(MatrixTest, Sum) {
     std::vector<std::vector<float>> data = {{1.0f, 2.0f}, {3.0f, 4.0f}};
     Matrix m(data);
     Matrix m_sum = m.sum();
-    std::vector<std::vector<float>> expected_data = {{4.0f}};
+    std::vector<std::vector<float>> expected_data = {{10.0f}};
     Matrix expected(expected_data);
     EXPECT_TRUE(m_sum.equal(expected));
 }
@@ -547,31 +558,22 @@ TEST(MatrixTest, SumAxis1) {
     EXPECT_TRUE(m_sum.equal(expected));
 }
 
-TEST(MatrixTest, Softmax) {
-    std::vector<std::vector<float>> data = {{1.0f, 2.0f}, {3.0f, 4.0f}};
-    Matrix m(data);
-    Matrix m_softmax = m.softmax();
-    std::vector<std::vector<float>> expected_data = {{1 / (1 + std::exp(1)), 1 / (1 + std::exp(2))}, {1 / (1 + std::exp(3)), 1 / (1 + std::exp(4))}};
-    Matrix expected(expected_data);
-    EXPECT_TRUE(m_softmax.equal(expected));
-}
-
 TEST(MatrixTest, SoftmaxAxis0) {
     std::vector<std::vector<float>> data = {{1.0f, 2.0f}, {3.0f, 4.0f}};
     Matrix m(data);
     Matrix m_softmax = m.softmax(0);
-    std::vector<std::vector<float>> expected_data = {{1 / (1 + std::exp(1)), 1 / (1 + std::exp(3))}, {1 / (1 + std::exp(2)), 1 / (1 + std::exp(4))}};
+    std::vector<std::vector<float>> expected_data = {{0.119203f, 0.119203f}, {0.880797f, 0.880797f}};
     Matrix expected(expected_data);
-    EXPECT_TRUE(m_softmax.equal(expected));
+    EXPECT_TRUE(m_softmax.all_close(expected));
 }
 
 TEST(MatrixTest, SoftmaxAxis1) {
     std::vector<std::vector<float>> data = {{1.0f, 2.0f}, {3.0f, 4.0f}};
     Matrix m(data);
     Matrix m_softmax = m.softmax(1);
-    std::vector<std::vector<float>> expected_data = {{1 / (1 + std::exp(1)), 1 / (1 + std::exp(2))}, {1 / (1 + std::exp(3)), 1 / (1 + std::exp(4))}};
+    std::vector<std::vector<float>> expected_data = {{0.26894142f, 0.73105858f}, {0.26894142f, 0.73105858f}};
     Matrix expected(expected_data);
-    EXPECT_TRUE(m_softmax.equal(expected));
+    EXPECT_TRUE(m_softmax.all_close(expected));
 }
 
 TEST(MatrixTest, Equal) {
@@ -592,7 +594,7 @@ TEST(MatrixTest, NotEqual) {
 
 TEST(MatrixTest, AllClose) {
     float tolerance = 1e-5;
-    float within_tolerance = 1e-6.0f;
+    float within_tolerance = 1e-6;
     std::vector<std::vector<float>> data1 = {{1.0f, 2.0f}, {3.0f, 4.0f}};
     Matrix m1(data1);
     std::vector<std::vector<float>> data2 = {{1.0f, 2.0f}, {3.0f, 4.0f}};
@@ -666,4 +668,9 @@ TEST(MatrixTest, InnerDimNotSameAs) {
     std::vector<std::vector<float>> data2 = {{5.0f, 6.0f}};
     Matrix m2(data2);
     EXPECT_FALSE(m1.inner_dim_same_as(m2));
+}
+
+int main(int argc, char **argv) {
+    ::testing::InitGoogleTest(&argc, argv);
+    return RUN_ALL_TESTS();
 }
