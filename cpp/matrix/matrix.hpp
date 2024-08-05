@@ -26,7 +26,13 @@ public:
 
     Matrix transpose() const;
     Matrix T() const;
+
     Matrix expand(uint8_t axis, uint32_t new_size) const;
+
+    Matrix pad_start(uint8_t axis, uint32_t pad_size) const;
+    Matrix pad_end(uint8_t axis, uint32_t pad_size) const;
+    Matrix shrink_start(uint8_t axis, uint32_t shrink_size) const;
+    Matrix shrink_end(uint8_t axis, uint32_t shrink_size) const;
 
     Matrix neg() const;
     Matrix add(const Matrix &other) const;
@@ -60,6 +66,7 @@ public:
 
     Matrix matmul(const Matrix &other) const;
 
+    Matrix clamp(float min, float max) const;
     Matrix sqrt() const;
     Matrix exp() const;
     Matrix log() const;
@@ -75,6 +82,8 @@ public:
     void set(uint32_t row_i, uint32_t col_i, float value);
     float at(uint32_t row_i, uint32_t col_i) const;
     float scalar() const;
+
+    std::pair<uint32_t, uint32_t> shape() const;
 
     bool dims_same_as(const Matrix &other) const;
     bool inner_dim_same_as(const Matrix &other) const;

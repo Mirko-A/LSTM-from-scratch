@@ -150,6 +150,78 @@ TEST(MatrixTest, Expand) {
     EXPECT_TRUE(m_expand.equal(expected));
 }
 
+TEST(MatrixTest, PadStartAxis0) {
+    std::vector<std::vector<float>> data = {{1.0f, 2.0f}, {3.0f, 4.0f}};
+    Matrix m(data);
+    Matrix m_pad = m.pad_start(0, 1);
+    std::vector<std::vector<float>> expected_data = {{0.0f, 0.0f}, {1.0f, 2.0f}, {3.0f, 4.0f}};
+    Matrix expected(expected_data);
+    EXPECT_TRUE(m_pad.equal(expected));
+}
+
+TEST(MatrixTest, PadStartAxis1) {
+    std::vector<std::vector<float>> data = {{1.0f, 2.0f}, {3.0f, 4.0f}};
+    Matrix m(data);
+    Matrix m_pad = m.pad_start(1, 1);
+    std::vector<std::vector<float>> expected_data = {{0.0f, 1.0f, 2.0f}, {0.0f, 3.0f, 4.0f}};
+    Matrix expected(expected_data);
+    EXPECT_TRUE(m_pad.equal(expected));
+}
+
+TEST(MatrixTest, PadEndAxis0) {
+    std::vector<std::vector<float>> data = {{1.0f, 2.0f}, {3.0f, 4.0f}};
+    Matrix m(data);
+    Matrix m_pad = m.pad_end(0, 1);
+    std::vector<std::vector<float>> expected_data = {{1.0f, 2.0f}, {3.0f, 4.0f}, {0.0f, 0.0f}};
+    Matrix expected(expected_data);
+    EXPECT_TRUE(m_pad.equal(expected));
+}
+
+TEST(MatrixTest, PadEndAxis1) {
+    std::vector<std::vector<float>> data = {{1.0f, 2.0f}, {3.0f, 4.0f}};
+    Matrix m(data);
+    Matrix m_pad = m.pad_end(1, 1);
+    std::vector<std::vector<float>> expected_data = {{1.0f, 2.0f, 0.0f}, {3.0f, 4.0f, 0.0f}};
+    Matrix expected(expected_data);
+    EXPECT_TRUE(m_pad.equal(expected));
+}
+
+TEST(MatrixTest, ShrinkStartAxis0) {
+    std::vector<std::vector<float>> data = {{1.0f, 2.0f}, {3.0f, 4.0f}, {5.0f, 6.0f}};
+    Matrix m(data);
+    Matrix m_shrink = m.shrink_start(0, 1);
+    std::vector<std::vector<float>> expected_data = {{3.0f, 4.0f}, {5.0f, 6.0f}};
+    Matrix expected(expected_data);
+    EXPECT_TRUE(m_shrink.equal(expected));
+}
+
+TEST(MatrixTest, ShrinkStartAxis1) {
+    std::vector<std::vector<float>> data = {{1.0f, 2.0f, 3.0f}, {4.0f, 5.0f, 6.0f}};
+    Matrix m(data);
+    Matrix m_shrink = m.shrink_start(1, 1);
+    std::vector<std::vector<float>> expected_data = {{2.0f, 3.0f}, {5.0f, 6.0f}};
+    Matrix expected(expected_data);
+    EXPECT_TRUE(m_shrink.equal(expected));
+}
+
+TEST(MatrixTest, ShrinkEndAxis0) {
+    std::vector<std::vector<float>> data = {{1.0f, 2.0f}, {3.0f, 4.0f}, {5.0f, 6.0f}};
+    Matrix m(data);
+    Matrix m_shrink = m.shrink_end(0, 1);
+    std::vector<std::vector<float>> expected_data = {{1.0f, 2.0f}, {3.0f, 4.0f}};
+    Matrix expected(expected_data);
+    EXPECT_TRUE(m_shrink.equal(expected));
+}
+
+TEST(MatrixTest, ShrinkEndAxis1) {
+    std::vector<std::vector<float>> data = {{1.0f, 2.0f, 3.0f}, {4.0f, 5.0f, 6.0f}};
+    Matrix m(data);
+    Matrix m_shrink = m.shrink_end(1, 1);
+    std::vector<std::vector<float>> expected_data = {{1.0f, 2.0f}, {4.0f, 5.0f}};
+    Matrix expected(expected_data);
+    EXPECT_TRUE(m_shrink.equal(expected));
+}
+
 TEST(MatrixTest, Neg) {
     std::vector<std::vector<float>> data = {{1.0f, 2.0f}, {3.0f, 4.0f}};
     Matrix m(data);
