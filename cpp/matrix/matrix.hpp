@@ -5,8 +5,14 @@
 
 class Matrix {
 public:
-    Matrix() = delete;
+    Matrix();
     Matrix(std::vector<std::vector<float>> data);
+    // copy and move constructor
+    Matrix(const Matrix &other);
+    Matrix(Matrix &&other);
+    // copy and move assignment
+    Matrix &operator=(const Matrix &other);
+    Matrix &operator=(Matrix &&other);
 
     static Matrix full(uint32_t row_n, uint32_t col_n, float value);
     static Matrix zeros(uint32_t row_n, uint32_t col_n);

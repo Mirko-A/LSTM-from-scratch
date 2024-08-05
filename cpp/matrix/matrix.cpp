@@ -5,6 +5,35 @@
 
 #include "matrix.hpp"
 
+Matrix::Matrix()
+    : row_n(0), col_n(0) {}
+
+Matrix::Matrix(const Matrix &other)
+    : row_n(other.row_n), col_n(other.col_n), data(other.data) {}
+
+Matrix::Matrix(Matrix &&other)
+    : row_n(other.row_n), col_n(other.col_n), data(std::move(other.data)) {}
+
+Matrix &Matrix::operator=(const Matrix &other) {
+    if (this != &other) {
+        row_n = other.row_n;
+        col_n = other.col_n;
+        data = other.data;
+    }
+
+    return *this;
+}
+
+Matrix &Matrix::operator=(Matrix &&other) {
+    if (this != &other) {
+        row_n = other.row_n;
+        col_n = other.col_n;
+        data = std::move(other.data);
+    }
+
+    return *this;
+}
+
 Matrix::Matrix(std::vector<std::vector<float>> data)
     : row_n(data.size()), col_n(data[0].size()), data(std::move(data)) {
     assert(!this->data.empty());

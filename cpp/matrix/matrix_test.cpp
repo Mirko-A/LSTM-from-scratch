@@ -1,6 +1,12 @@
 #include "matrix.hpp"
 #include <gtest/gtest.h>
 
+TEST(MatrixTest, DefaultConstructor) {
+    Matrix m;
+    EXPECT_EQ(m.row_count(), 0);
+    EXPECT_EQ(m.col_count(), 0);
+}
+
 TEST(MatrixTest, Constructor) {
     std::vector<std::vector<float>> data = {{1, 2}, {3, 4}};
     Matrix m(data);
@@ -8,6 +14,48 @@ TEST(MatrixTest, Constructor) {
     EXPECT_EQ(m.at(0, 1), 2);
     EXPECT_EQ(m.at(1, 0), 3);
     EXPECT_EQ(m.at(1, 1), 4);
+}
+
+TEST(MatrixTest, CopyConstructor) {
+    std::vector<std::vector<float>> data = {{1, 2}, {3, 4}};
+    Matrix m1(data);
+    Matrix m2(m1);
+    EXPECT_EQ(m2.at(0, 0), 1);
+    EXPECT_EQ(m2.at(0, 1), 2);
+    EXPECT_EQ(m2.at(1, 0), 3);
+    EXPECT_EQ(m2.at(1, 1), 4);
+}
+
+TEST(MatrixTest, MoveConstructor) {
+    std::vector<std::vector<float>> data = {{1, 2}, {3, 4}};
+    Matrix m1(data);
+    Matrix m2(std::move(m1));
+    EXPECT_EQ(m2.at(0, 0), 1);
+    EXPECT_EQ(m2.at(0, 1), 2);
+    EXPECT_EQ(m2.at(1, 0), 3);
+    EXPECT_EQ(m2.at(1, 1), 4);
+}
+
+TEST(MatrixTest, CopyAssignment) {
+    std::vector<std::vector<float>> data = {{1, 2}, {3, 4}};
+    Matrix m1(data);
+    Matrix m2;
+    m2 = m1;
+    EXPECT_EQ(m2.at(0, 0), 1);
+    EXPECT_EQ(m2.at(0, 1), 2);
+    EXPECT_EQ(m2.at(1, 0), 3);
+    EXPECT_EQ(m2.at(1, 1), 4);
+}
+
+TEST(MatrixTest, MoveAssignment) {
+    std::vector<std::vector<float>> data = {{1, 2}, {3, 4}};
+    Matrix m1(data);
+    Matrix m2;
+    m2 = std::move(m1);
+    EXPECT_EQ(m2.at(0, 0), 1);
+    EXPECT_EQ(m2.at(0, 1), 2);
+    EXPECT_EQ(m2.at(1, 0), 3);
+    EXPECT_EQ(m2.at(1, 1), 4);
 }
 
 TEST(MatrixTest, Zeros) {
