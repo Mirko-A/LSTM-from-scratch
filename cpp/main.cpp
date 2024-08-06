@@ -31,8 +31,8 @@ static std::set<char> create_vocab(const std::vector<char> &data) {
 static Matrix one_hot_encode(uint32_t class_idx, uint32_t n_classes) {
     assert(class_idx < n_classes);
 
-    Matrix one_hot = Matrix::zeros(1, n_classes);
-    one_hot.set(0, class_idx, 1.0f);
+    Matrix one_hot = Matrix::zeros(n_classes, 1);
+    one_hot.set(class_idx, 0, 1.0f);
 
     return one_hot;
 }
