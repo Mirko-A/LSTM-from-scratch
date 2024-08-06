@@ -56,14 +56,14 @@ void LSTM::reset_cache() {
     outputs.clear();
 }
 
-std::vector<Matrix> LSTM::forward(std::vector<Matrix> inputs) {
+std::vector<Matrix> LSTM::forward(const std::vector<Matrix> &inputs) {
     reset_cache();
 
-    std::vector<Matrix> ret_outputs(inputs.size());
+    std::vector<Matrix> ret_outputs;
+    ret_outputs.reserve(inputs.size());
 
-    for (uint32_t t = 0; t < inputs.size(); ++t) {
+    for (int32_t t = 0; t < static_cast<int32_t>(inputs.size()); t++) {
         concat_inputs[t] = Matrix::concatenate(0, {hidden_states[t - 1], inputs[t]});
-
         forget_gates[t] = W_f.matmul(concat_inputs[t]) + b_f;
         input_gates[t] = W_i.matmul(concat_inputs[t]) + b_i;
         candidate_gates[t] = W_c.matmul(concat_inputs[t]) + b_c;
@@ -85,7 +85,7 @@ std::vector<Matrix> LSTM::forward(std::vector<Matrix> inputs) {
     return ret_outputs;
 }
 
-void LSTM::backward(std::vector<Matrix> labels) {
+void LSTM::backward(const std::vector<Matrix> &labels) {
     Matrix dW_f = Matrix::zeros_like(W_f);
     Matrix db_f = Matrix::zeros_like(b_f);
     Matrix dW_i = Matrix::zeros_like(W_i);
@@ -100,9 +100,9 @@ void LSTM::backward(std::vector<Matrix> labels) {
     Matrix hidden_state = Matrix::zeros_like(hidden_states[0]);
     Matrix cell_state = Matrix::zeros_like(cell_states[0]);
 
-    for (int32_t t = concat_inputs.size() - 1; t >= 0; t--) {
+    for (int32_t t = static_cast<int32_t>(concat_inputs.size() - 1); t >= 0; t--) {
         Matrix dL = -(labels[t] / outputs[t]);
-        Matrix dsoftmax = outputs[t] * dL - outputs[t].T().matmul(dL) * outputs[t];
+        Matrix dsoftmax = outputs[t] * dL - outputs[t].T().matmul(dL).expand(0, outputs[t].shape().first) * outputs[t];
 
         dW_y = dW_y + dsoftmax.matmul(hidden_states[t].T());
         db_y = db_y + dsoftmax;
@@ -163,22 +163,24 @@ void LSTM::backward(std::vector<Matrix> labels) {
     b_y = b_y - db_y * learning_rate;
 }
 
-std::vector<Matrix> LSTM::train(const std::vector<Matrix> &one_hot_inputs, const std::vector<Matrix> &one_hot_labels, uint32_t vocab_size, uint32_t epochs) {
+std::vector<float> LSTM::train(const std::vector<Matrix> &one_hot_inputs, const std::vector<Matrix> &one_hot_labels, uint32_t vocab_size, uint32_t epochs) {
     assert(one_hot_inputs.size() == one_hot_labels.size());
     uint32_t data_size = static_cast<uint32_t>(one_hot_inputs.size());
 
-    std::vector<Matrix> losses(data_size);
+    std::vector<float> losses;
+    losses.reserve(data_size);
     for (uint32_t epoch = 0; epoch < epochs; ++epoch) {
+        std::cout << "Epoch " << epoch << std::endl;
         std::vector<Matrix> predictions = forward(one_hot_inputs);
         uint32_t N = static_cast<uint32_t>(predictions.size());
 
-        Matrix loss = Matrix::zeros(1, 1);
+        float loss = 0.0f;
 
         for (uint32_t i = 0; i < N; ++i) {
-            loss = loss + cross_entropy_loss(predictions[i], one_hot_labels[i]);
+            loss = loss + cross_entropy_loss(predictions[i], one_hot_labels[i]).scalar();
         }
 
-        losses[epoch] = loss / N;
+        losses.push_back(loss / N);
         backward(one_hot_labels);
     }
 

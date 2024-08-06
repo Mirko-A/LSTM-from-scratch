@@ -13,10 +13,10 @@ public:
 
     LSTM(uint32_t input_size, uint32_t hidden_size, uint32_t output_size, float learning_rate = 1e-3);
 
-    std::vector<Matrix> forward(std::vector<Matrix> inputs);
-    void backward(std::vector<Matrix> labels);
+    std::vector<Matrix> forward(const std::vector<Matrix> &inputs);
+    void backward(const std::vector<Matrix> &labels);
 
-    std::vector<Matrix> train(const std::vector<Matrix> &one_hot_inputs, const std::vector<Matrix> &one_hot_labels, uint32_t vocab_size, uint32_t epochs);
+    std::vector<float> train(const std::vector<Matrix> &one_hot_inputs, const std::vector<Matrix> &one_hot_labels, uint32_t vocab_size, uint32_t epochs);
     std::tuple<std::string, float> test(const std::vector<Matrix> &one_hot_inputs, const std::vector<Matrix> &one_hot_labels);
 
 private:
