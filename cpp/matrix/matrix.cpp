@@ -34,17 +34,16 @@ Matrix &Matrix::operator=(Matrix &&other) {
     return *this;
 }
 
-Matrix::Matrix(std::vector<std::vector<float>> data) {
+Matrix::Matrix(std::vector<std::vector<float>> data)
+    : row_n(static_cast<uint32_t>(data.size())),
+      col_n(static_cast<uint32_t>(data[0].size())),
+      data(std::move(data)) {
     assert(!this->data.empty());
 
     size_t col_size = this->data[0].size();
     for (const auto &row : this->data) {
         assert(row.size() == col_size);
     }
-
-    row_n = static_cast<uint32_t>(data.size());
-    col_n = static_cast<uint32_t>(data[0].size());
-    this->data = std::move(data);
 }
 
 Matrix Matrix::full(uint32_t row_n, uint32_t col_n, float value) {
@@ -94,9 +93,9 @@ Matrix Matrix::uniform(uint32_t row_n, uint32_t col_n, float low, float high) {
 
     for (auto &row : data) {
         std::generate(row.begin(), row.end(),
-                      [&]() { 
-                return static_cast<float>(dis(gen)); 
-            });
+                      [&]() {
+                          return static_cast<float>(dis(gen));
+                      });
     }
 
     return Matrix(data);
