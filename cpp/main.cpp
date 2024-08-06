@@ -48,9 +48,9 @@ int main() {
 
     std::string dataset_str = maybe_dataset.value();
     std::vector<char> dataset(dataset_str.begin(), dataset_str.end());
-    std::size_t dataset_size = dataset.size();
+    uint32_t dataset_size = static_cast<uint32_t>(dataset.size());
     std::set<char> vocab = create_vocab(dataset);
-    std::size_t vocab_size = vocab.size();
+    uint32_t vocab_size = static_cast<uint32_t>(vocab.size());
 
     std::cout << "Data size: " << dataset_size << std::endl;
     std::cout << "Vocab size: " << vocab_size << std::endl;

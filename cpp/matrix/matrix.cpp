@@ -34,14 +34,17 @@ Matrix &Matrix::operator=(Matrix &&other) {
     return *this;
 }
 
-Matrix::Matrix(std::vector<std::vector<float>> data)
-    : row_n(data.size()), col_n(data[0].size()), data(std::move(data)) {
+Matrix::Matrix(std::vector<std::vector<float>> data) {
     assert(!this->data.empty());
 
     size_t col_size = this->data[0].size();
     for (const auto &row : this->data) {
         assert(row.size() == col_size);
     }
+
+    row_n = static_cast<uint32_t>(data.size());
+    col_n = static_cast<uint32_t>(data[0].size());
+    this->data = std::move(data);
 }
 
 Matrix Matrix::full(uint32_t row_n, uint32_t col_n, float value) {
@@ -57,7 +60,9 @@ Matrix Matrix::ones(uint32_t row_n, uint32_t col_n) {
 }
 
 Matrix Matrix::full_like(const Matrix &other, float value) {
-    return full(other.data.size(), other.data[0].size(), value);
+    uint32_t row_n = static_cast<uint32_t>(other.data.size());
+    uint32_t col_n = static_cast<uint32_t>(other.data[0].size());
+    return full(row_n, col_n, value);
 }
 
 Matrix Matrix::zeros_like(const Matrix &other) {
@@ -89,7 +94,9 @@ Matrix Matrix::uniform(uint32_t row_n, uint32_t col_n, float low, float high) {
 
     for (auto &row : data) {
         std::generate(row.begin(), row.end(),
-                      [&]() { return dis(gen); });
+                      [&]() { 
+                return static_cast<float>(dis(gen)); 
+            });
     }
 
     return Matrix(data);
