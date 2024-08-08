@@ -77,7 +77,7 @@ std::vector<Matrix> LSTM::forward(const std::vector<Matrix> &inputs) {
         cell_states[t] = fga * cell_states[t - 1] + iga * cga;
         hidden_states[t] = oga * cell_states[t].tanh();
 
-        Matrix output = (W_y.matmul(hidden_states[t]) + b_y).softmax(1);
+        Matrix output = (W_y.matmul(hidden_states[t]) + b_y).softmax(0);
         ret_outputs.push_back(output);
         outputs[t] = output;
     }
@@ -113,7 +113,7 @@ void LSTM::backward(const std::vector<Matrix> &labels) {
         dW_o = dW_o + doutput.matmul(concat_inputs[t].T());
         db_o = db_o + doutput;
 
-        Matrix dcell_state = dtanh(cell_states[t]) * output_gates[t].sigmoid() + dhidden_state + cell_state;
+        Matrix dcell_state = dtanh(cell_states[t]) * output_gates[t].sigmoid() * dhidden_state + cell_state;
 
         Matrix dforget = dcell_state * cell_states[t - 1] * dsigmoid(forget_gates[t]);
 
@@ -125,7 +125,7 @@ void LSTM::backward(const std::vector<Matrix> &labels) {
         dW_i = dW_i + dinput.matmul(concat_inputs[t].T());
         db_i = db_i + dinput;
 
-        Matrix dcandidate = dcell_state * input_gates[t].sigmoid() + dtanh(candidate_gates[t]);
+        Matrix dcandidate = dcell_state * input_gates[t].sigmoid() * dtanh(candidate_gates[t]);
 
         dW_c = dW_c + dcandidate.matmul(concat_inputs[t].T());
         db_c = db_c + dcandidate;
