@@ -94,7 +94,7 @@ static std::tuple<std::string, float> test(LSTM &model,
 
     for (size_t i = 0; i < one_hot_inputs.size(); i++) {
         Matrix prob_mat = probabilities[i];
-        std::vector<float> probs = prob_mat.flatten_col().get_data()[0];
+        std::vector<float> probs = prob_mat.flatten_row().get_data()[0];
 
         char prediction = idx_to_char[random_choice(probs)];
         output.push_back(prediction);
@@ -165,7 +165,6 @@ int main() {
     std::cout << "Training LSTM network..." << std::endl;
 
     auto losses = train(lstm, x_train, y_train, vocab_size, epochs);
-    auto losses_2 = train(lstm, x_train, y_train, vocab_size, epochs);
 
     std::tuple output = test(lstm, x_train, y_train_chars, idx_to_char);
 
