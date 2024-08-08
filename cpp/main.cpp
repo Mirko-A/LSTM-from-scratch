@@ -37,8 +37,80 @@ static Matrix one_hot_encode(uint32_t class_idx, uint32_t n_classes) {
     return one_hot;
 }
 
+static Matrix cross_entropy_loss(const Matrix &y_pred, const Matrix &y_true) {
+    return -(y_true * y_pred.log()).sum();
+}
+
+static std::vector<float> train(LSTM &model, const std::vector<Matrix> &one_hot_inputs, const std::vector<Matrix> &one_hot_labels, uint32_t vocab_size, uint32_t epochs) {
+    assert(one_hot_inputs.size() == one_hot_labels.size());
+    uint32_t data_size = static_cast<uint32_t>(one_hot_inputs.size());
+
+    std::vector<float> losses;
+    losses.reserve(data_size);
+    for (uint32_t epoch = 0; epoch < epochs; ++epoch) {
+        std::vector<Matrix> predictions = model.forward(one_hot_inputs);
+        uint32_t N = static_cast<uint32_t>(predictions.size());
+
+        float loss = 0.0f;
+
+        for (uint32_t i = 0; i < N; ++i) {
+            loss = loss + cross_entropy_loss(predictions[i], one_hot_labels[i]).scalar();
+        }
+
+        float avg_loss = loss / N;
+        std::cout << "Epoch " << epoch + 1 << " - loss: " << avg_loss << std::endl;
+
+        losses.push_back(avg_loss);
+        model.backward(one_hot_labels);
+    }
+
+    return losses;
+}
+
+uint32_t random_choice(const std::vector<float> &probabilities) {
+    float r = static_cast<float>(rand()) / static_cast<float>(RAND_MAX);
+    float cumulative_prob = 0.0f;
+
+    for (size_t i = 0; i < probabilities.size(); i++) {
+        cumulative_prob += probabilities[i];
+        if (r <= cumulative_prob) {
+            return static_cast<uint32_t>(i);
+        }
+    }
+
+    return static_cast<uint32_t>(probabilities.size() - 1);
+}
+
+static std::tuple<std::string, float> test(LSTM &model,
+                                           const std::vector<Matrix> &one_hot_inputs,
+                                           const std::vector<char> &labels,
+                                           std::unordered_map<uint32_t, char> &idx_to_char) {
+    assert(one_hot_inputs.size() == labels.size());
+    uint32_t accuracy = 0;
+    auto probabilities = model.forward(one_hot_inputs);
+    assert(probabilities.size() == labels.size());
+
+    std::string output = "";
+
+    for (size_t i = 0; i < one_hot_inputs.size(); i++) {
+        Matrix prob_mat = probabilities[i];
+        std::vector<float> probs = prob_mat.flatten_col().get_data()[0];
+
+        char prediction = idx_to_char[random_choice(probs)];
+        output.push_back(prediction);
+
+        if (prediction == labels[i]) {
+            accuracy++;
+        }
+    }
+
+    float accuracy_perc = accuracy * 100 / one_hot_inputs.size();
+
+    return std::make_tuple(output, accuracy_perc);
+}
+
 int main() {
-    std::string dataset_path = "../../datasets/shakespeare/tiny_shakespeare_small.txt";
+    std::string dataset_path = "../../datasets/shakespeare/tiny_shakespeare_tiny.txt";
     std::optional<std::string> maybe_dataset = read_to_string(dataset_path);
 
     if (!maybe_dataset.has_value()) {
@@ -85,20 +157,23 @@ int main() {
     uint32_t input_size = vocab_size + hidden_size;
     uint32_t output_size = vocab_size;
 
-    float learning_rate = 0.06f;
+    float learning_rate = 0.005f;
     uint32_t epochs = 10;
 
     LSTM lstm(input_size, hidden_size, output_size, learning_rate);
 
     std::cout << "Training LSTM network..." << std::endl;
 
-    auto losses = lstm.train(x_train, y_train, vocab_size, epochs);
+    auto losses = train(lstm, x_train, y_train, vocab_size, epochs);
+    auto losses_2 = train(lstm, x_train, y_train, vocab_size, epochs);
 
-    uint32_t epoch = 0;
-    for (auto loss : losses) {
-        std::cout << "Loss epoch " << epoch << ": " << loss << std::endl;
-        epoch++;
-    }
+    std::tuple output = test(lstm, x_train, y_train_chars, idx_to_char);
+
+    std::string output_str = std::get<0>(output);
+    float accuracy = std::get<1>(output);
+
+    std::cout << "Test accuracy: " << accuracy << "%" << std::endl;
+    // std::cout << "Output: " << output_str << std::endl;
 
     return 0;
 }

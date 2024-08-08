@@ -11,10 +11,6 @@ static Matrix dsigmoid(const Matrix &x) {
     return x.sigmoid() * (1.0f - x.sigmoid());
 }
 
-static Matrix cross_entropy_loss(const Matrix &y_pred, const Matrix &y_true) {
-    return -(y_true * y_pred.log()).sum();
-}
-
 static Matrix init_weights(uint32_t input_size, uint32_t output_size) {
     // Xavier initialization
     return Matrix::uniform(output_size, input_size, -1.0f, 1.0f) * std::sqrt(6.0f / (input_size + output_size));
@@ -161,32 +157,4 @@ void LSTM::backward(const std::vector<Matrix> &labels) {
     b_o = b_o - db_o * learning_rate;
     W_y = W_y - dW_y * learning_rate;
     b_y = b_y - db_y * learning_rate;
-}
-
-std::vector<float> LSTM::train(const std::vector<Matrix> &one_hot_inputs, const std::vector<Matrix> &one_hot_labels, uint32_t vocab_size, uint32_t epochs) {
-    assert(one_hot_inputs.size() == one_hot_labels.size());
-    uint32_t data_size = static_cast<uint32_t>(one_hot_inputs.size());
-
-    std::vector<float> losses;
-    losses.reserve(data_size);
-    for (uint32_t epoch = 0; epoch < epochs; ++epoch) {
-        std::cout << "Epoch " << epoch << std::endl;
-        std::vector<Matrix> predictions = forward(one_hot_inputs);
-        uint32_t N = static_cast<uint32_t>(predictions.size());
-
-        float loss = 0.0f;
-
-        for (uint32_t i = 0; i < N; ++i) {
-            loss = loss + cross_entropy_loss(predictions[i], one_hot_labels[i]).scalar();
-        }
-
-        losses.push_back(loss / N);
-        backward(one_hot_labels);
-    }
-
-    return losses;
-}
-
-std::tuple<std::string, float> test(const std::vector<Matrix> &one_hot_inputs, const std::vector<Matrix> &one_hot_labels) {
-    return std::make_tuple(std::string(), 0.0f);
 }

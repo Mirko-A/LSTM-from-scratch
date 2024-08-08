@@ -193,6 +193,32 @@ Matrix Matrix::expand(uint8_t axis, uint32_t new_size) const {
     }
 }
 
+Matrix Matrix::flatten_row() const {
+    std::vector<std::vector<float>> flattened(1, std::vector<float>(row_n * col_n));
+
+    uint32_t idx = 0;
+    for (uint32_t i = 0; i < row_n; ++i) {
+        for (uint32_t j = 0; j < col_n; ++j) {
+            flattened[0][idx++] = data[i][j];
+        }
+    }
+
+    return Matrix(flattened);
+}
+
+Matrix Matrix::flatten_col() const {
+    std::vector<std::vector<float>> flattened(row_n * col_n, std::vector<float>(1));
+
+    uint32_t idx = 0;
+    for (uint32_t i = 0; i < row_n; ++i) {
+        for (uint32_t j = 0; j < col_n; ++j) {
+            flattened[idx++][0] = data[i][j];
+        }
+    }
+
+    return Matrix(flattened);
+}
+
 Matrix Matrix::pad_start(uint8_t axis, uint32_t pad_size) const {
     assert(axis == 0 || axis == 1);
 
@@ -605,6 +631,10 @@ bool Matrix::all_close(const Matrix &other, float tolerance) const {
     }
 
     return true;
+}
+
+std::vector<std::vector<float>> Matrix::get_data() const {
+    return data;
 }
 
 void Matrix::set(uint32_t row_i, uint32_t col_i, float value) {

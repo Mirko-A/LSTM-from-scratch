@@ -16,9 +16,6 @@ public:
     std::vector<Matrix> forward(const std::vector<Matrix> &inputs);
     void backward(const std::vector<Matrix> &labels);
 
-    std::vector<float> train(const std::vector<Matrix> &one_hot_inputs, const std::vector<Matrix> &one_hot_labels, uint32_t vocab_size, uint32_t epochs);
-    std::tuple<std::string, float> test(const std::vector<Matrix> &one_hot_inputs, const std::vector<Matrix> &one_hot_labels);
-
 private:
     void reset_cache();
 

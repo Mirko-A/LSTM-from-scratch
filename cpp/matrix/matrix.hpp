@@ -30,6 +30,8 @@ public:
     Matrix T() const;
 
     Matrix expand(uint8_t axis, uint32_t new_size) const;
+    Matrix flatten_row() const;
+    Matrix flatten_col() const;
 
     Matrix pad_start(uint8_t axis, uint32_t pad_size) const;
     Matrix pad_end(uint8_t axis, uint32_t pad_size) const;
@@ -83,6 +85,7 @@ public:
 
     void set(uint32_t row_i, uint32_t col_i, float value);
     float at(uint32_t row_i, uint32_t col_i) const;
+    std::vector<std::vector<float>> get_data() const;
     float scalar() const;
 
     std::pair<uint32_t, uint32_t> shape() const;
