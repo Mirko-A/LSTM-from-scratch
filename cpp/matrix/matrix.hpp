@@ -76,7 +76,7 @@ public:
     Matrix sigmoid() const;
 
     Matrix sum(std::optional<uint8_t> axis = std::nullopt) const;
-    Matrix softmax(uint8_t axis) const;
+    Matrix softmax(uint8_t axis = 0) const;
 
     bool equal(const Matrix &other) const;
     bool all_close(const Matrix &other, float tolerance = 1e-5) const;
