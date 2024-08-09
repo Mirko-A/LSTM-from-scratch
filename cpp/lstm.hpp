@@ -6,8 +6,11 @@
 
 class LSTM {
 public:
+    static LSTM load(const std::string &model_path);
+
+public:
     LSTM() = delete;
-    LSTM(const LSTM &) = delete;
+    LSTM(const LSTM &);
     LSTM &operator=(const LSTM &) = delete;
     LSTM &operator=(LSTM &&) = delete;
 
@@ -15,6 +18,8 @@ public:
 
     std::vector<Matrix> forward(const std::vector<Matrix> &inputs);
     void backward(const std::vector<Matrix> &labels);
+
+    void save(const std::string &model_path) const;
 
 private:
     void reset_cache();

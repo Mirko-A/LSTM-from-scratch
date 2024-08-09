@@ -7,15 +7,6 @@
 
 class Matrix {
 public:
-    Matrix();
-    Matrix(std::vector<std::vector<float>> data);
-    // copy and move constructor
-    Matrix(const Matrix &other);
-    Matrix(Matrix &&other);
-    // copy and move assignment
-    Matrix &operator=(const Matrix &other);
-    Matrix &operator=(Matrix &&other);
-
     static Matrix full(uint32_t row_n, uint32_t col_n, float value);
     static Matrix zeros(uint32_t row_n, uint32_t col_n);
     static Matrix ones(uint32_t row_n, uint32_t col_n);
@@ -25,6 +16,16 @@ public:
     static Matrix arange(uint32_t row_n, uint32_t col_n, uint32_t start = 0);
     static Matrix uniform(uint32_t row_n, uint32_t col_n, float low, float high);
     static Matrix concatenate(uint8_t axis, const std::vector<Matrix> &matrices);
+
+public:
+    Matrix();
+    Matrix(std::vector<std::vector<float>> data);
+    // copy and move constructor
+    Matrix(const Matrix &other);
+    Matrix(Matrix &&other);
+    // copy and move assignment
+    Matrix &operator=(const Matrix &other);
+    Matrix &operator=(Matrix &&other);
 
     Matrix transpose() const;
     Matrix T() const;
@@ -83,10 +84,12 @@ public:
     bool equal(const Matrix &other) const;
     bool all_close(const Matrix &other, float tolerance = 1e-5) const;
 
-    void set(uint32_t row_i, uint32_t col_i, float value);
     float at(uint32_t row_i, uint32_t col_i) const;
-    std::vector<std::vector<float>> get_data() const;
+    void set(uint32_t row_i, uint32_t col_i, float value);
+
     float scalar() const;
+
+    std::vector<std::vector<float>> get_data() const;
 
     std::pair<uint32_t, uint32_t> shape() const;
 

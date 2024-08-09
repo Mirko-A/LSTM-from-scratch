@@ -158,7 +158,7 @@ int main() {
     uint32_t output_size = vocab_size;
 
     float learning_rate = 0.005f;
-    uint32_t epochs = 10;
+    uint32_t epochs = 3;
 
     LSTM lstm(input_size, hidden_size, output_size, learning_rate);
 
@@ -166,12 +166,20 @@ int main() {
 
     auto losses = train(lstm, x_train, y_train, vocab_size, epochs);
 
-    std::tuple output = test(lstm, x_train, y_train_chars, idx_to_char);
+    const std::string model_path = "./model/lstm.json";
+    lstm.save(model_path);
 
-    std::string output_str = std::get<0>(output);
+    LSTM lstm2 = LSTM::load(model_path);
+
+    std::tuple output = test(lstm, x_train, y_train_chars, idx_to_char);
+    std::tuple output2 = test(lstm2, x_train, y_train_chars, idx_to_char);
+
+    // std::string output_str = std::get<0>(output);
     float accuracy = std::get<1>(output);
+    float accuracy2 = std::get<1>(output2);
 
     std::cout << "Test accuracy: " << accuracy << "%" << std::endl;
+    std::cout << "Test accuracy 2: " << accuracy2 << "%" << std::endl;
     // std::cout << "Output: " << output_str << std::endl;
 
     return 0;

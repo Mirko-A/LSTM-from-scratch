@@ -637,15 +637,15 @@ std::vector<std::vector<float>> Matrix::get_data() const {
     return data;
 }
 
-void Matrix::set(uint32_t row_i, uint32_t col_i, float value) {
-    assert(row_i < row_n && col_i < col_n);
-    data[row_i][col_i] = value;
-}
-
 float Matrix::at(uint32_t row_i, uint32_t col_i) const {
     assert(row_i < row_n && col_i < col_n);
 
     return data[row_i][col_i];
+}
+
+void Matrix::set(uint32_t row_i, uint32_t col_i, float value) {
+    assert(row_i < row_n && col_i < col_n);
+    data[row_i][col_i] = value;
 }
 
 float Matrix::scalar() const {

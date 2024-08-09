@@ -1,5 +1,10 @@
 #include <cassert>
 #include <cmath>
+#include <filesystem>
+#include <fstream>
+#include <iostream>
+
+#include <nlohmann/json.hpp>
 
 #include "lstm.hpp"
 
@@ -15,6 +20,10 @@ static Matrix init_weights(uint32_t input_size, uint32_t output_size) {
     // Xavier initialization
     return Matrix::uniform(output_size, input_size, -1.0f, 1.0f) * std::sqrt(6.0f / (input_size + output_size));
 }
+
+LSTM::LSTM(const LSTM &other)
+    : input_size(other.input_size), hidden_size(other.hidden_size), output_size(other.output_size), learning_rate(other.learning_rate),
+      W_f(other.W_f), b_f(other.b_f), W_i(other.W_i), b_i(other.b_i), W_c(other.W_c), b_c(other.b_c), W_o(other.W_o), b_o(other.b_o), W_y(other.W_y), b_y(other.b_y) {}
 
 LSTM::LSTM(uint32_t input_size, uint32_t hidden_size, uint32_t output_size, float learning_rate)
     : input_size(input_size), hidden_size(hidden_size), output_size(output_size), learning_rate(learning_rate) {
@@ -157,4 +166,83 @@ void LSTM::backward(const std::vector<Matrix> &labels) {
     b_o = b_o - db_o * learning_rate;
     W_y = W_y - dW_y * learning_rate;
     b_y = b_y - db_y * learning_rate;
+}
+
+void LSTM::save(const std::string &model_path) const {
+    std::filesystem::path fp(model_path);
+    std::filesystem::path dir_path = fp.parent_path();
+
+    if (!std::filesystem::exists(dir_path)) {
+        std::filesystem::create_directories(dir_path);
+    }
+
+    std::ofstream ofs(model_path);
+
+    if (!ofs.is_open()) {
+        throw std::runtime_error("Failed to open file for writing");
+    }
+
+    nlohmann::json json_obj;
+
+    json_obj["input_size"] = input_size;
+    json_obj["hidden_size"] = hidden_size;
+    json_obj["output_size"] = output_size;
+
+    json_obj["learning_rate"] = learning_rate;
+
+    json_obj["W_f"] = W_f.get_data();
+    json_obj["b_f"] = b_f.get_data();
+
+    json_obj["W_i"] = W_i.get_data();
+    json_obj["b_i"] = b_i.get_data();
+
+    json_obj["W_c"] = W_c.get_data();
+    json_obj["b_c"] = b_c.get_data();
+
+    json_obj["W_o"] = W_o.get_data();
+    json_obj["b_o"] = b_o.get_data();
+
+    json_obj["W_y"] = W_y.get_data();
+    json_obj["b_y"] = b_y.get_data();
+
+    ofs << json_obj.dump(4) << std::endl;
+    ofs.close();
+}
+
+LSTM LSTM::load(const std::string &model_path) {
+    std::ifstream ifs(model_path);
+
+    if (!ifs.is_open()) {
+        throw std::runtime_error("Failed to open file for reading");
+    }
+
+    nlohmann::json json_obj;
+    ifs >> json_obj;
+    ifs.close();
+
+    uint32_t input_size = json_obj["input_size"];
+    uint32_t hidden_size = json_obj["hidden_size"];
+    uint32_t output_size = json_obj["output_size"];
+
+    float learning_rate = json_obj["learning_rate"];
+
+    LSTM lstm(input_size, hidden_size, output_size, learning_rate);
+
+    // 2D arrays will be converted to std::vector<std::vector<float>>
+    lstm.W_f = Matrix(json_obj["W_f"]);
+    lstm.b_f = Matrix(json_obj["b_f"]);
+
+    lstm.W_i = Matrix(json_obj["W_i"]);
+    lstm.b_i = Matrix(json_obj["b_i"]);
+
+    lstm.W_c = Matrix(json_obj["W_c"]);
+    lstm.b_c = Matrix(json_obj["b_c"]);
+
+    lstm.W_o = Matrix(json_obj["W_o"]);
+    lstm.b_o = Matrix(json_obj["b_o"]);
+
+    lstm.W_y = Matrix(json_obj["W_y"]);
+    lstm.b_y = Matrix(json_obj["b_y"]);
+
+    return std::move(lstm);
 }
