@@ -157,8 +157,8 @@ int main() {
     uint32_t input_size = vocab_size + hidden_size;
     uint32_t output_size = vocab_size;
 
-    float learning_rate = 0.001f;
-    uint32_t epochs = 1;
+    float learning_rate = 0.0005f;
+    uint32_t epochs = 3;
 
     const std::string model_path = "../model/lstm.json";
     LSTM lstm = LSTM::load(model_path);
