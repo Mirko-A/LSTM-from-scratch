@@ -5,3 +5,4 @@ cpp/build*
 # python
 venv
 __pycache__
+cpp/.cache

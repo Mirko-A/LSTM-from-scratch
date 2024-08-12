@@ -2,6 +2,7 @@ cmake_minimum_required(VERSION 3.10)
 project(LSTM)
 
 set(CMAKE_CXX_STANDARD 23)
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 if(NOT CMAKE_BUILD_TYPE)
   set(CMAKE_BUILD_TYPE Release)
