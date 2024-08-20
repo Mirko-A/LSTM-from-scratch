@@ -8,7 +8,8 @@
 #include "lstm.hpp"
 #include "matrix.hpp"
 
-static std::optional<std::string> read_to_string(const std::string &path) {
+static std::optional<std::string> read_to_string(const std::string& path)
+{
     std::ifstream file(path);
     if (!file.is_open()) {
         return std::nullopt;
@@ -24,11 +25,13 @@ static std::optional<std::string> read_to_string(const std::string &path) {
     return std::make_optional(content);
 }
 
-static std::set<char> create_vocab(const std::vector<char> &data) {
+static std::set<char> create_vocab(const std::vector<char>& data)
+{
     return std::set<char>(data.begin(), data.end());
 }
 
-static Matrix one_hot_encode(uint32_t class_idx, uint32_t n_classes) {
+static Matrix one_hot_encode(uint32_t class_idx, uint32_t n_classes)
+{
     assert(class_idx < n_classes);
 
     Matrix one_hot = Matrix::zeros(n_classes, 1);
@@ -37,11 +40,13 @@ static Matrix one_hot_encode(uint32_t class_idx, uint32_t n_classes) {
     return one_hot;
 }
 
-static Matrix cross_entropy_loss(const Matrix &y_pred, const Matrix &y_true) {
+static Matrix cross_entropy_loss(const Matrix& y_pred, const Matrix& y_true)
+{
     return -(y_true * y_pred.log()).sum();
 }
 
-static std::vector<float> train(LSTM &model, const std::vector<Matrix> &one_hot_inputs, const std::vector<Matrix> &one_hot_labels, uint32_t vocab_size, uint32_t epochs) {
+static std::vector<float> train(LSTM& model, const std::vector<Matrix>& one_hot_inputs, const std::vector<Matrix>& one_hot_labels, uint32_t vocab_size, uint32_t epochs)
+{
     assert(one_hot_inputs.size() == one_hot_labels.size());
     uint32_t data_size = static_cast<uint32_t>(one_hot_inputs.size());
 
@@ -67,7 +72,8 @@ static std::vector<float> train(LSTM &model, const std::vector<Matrix> &one_hot_
     return losses;
 }
 
-uint32_t random_choice(const std::vector<float> &probabilities) {
+uint32_t random_choice(const std::vector<float>& probabilities)
+{
     float r = static_cast<float>(rand()) / static_cast<float>(RAND_MAX);
     float cumulative_prob = 0.0f;
 
@@ -81,10 +87,11 @@ uint32_t random_choice(const std::vector<float> &probabilities) {
     return static_cast<uint32_t>(probabilities.size() - 1);
 }
 
-static std::tuple<std::string, float> test(LSTM &model,
-                                           const std::vector<Matrix> &one_hot_inputs,
-                                           const std::vector<char> &labels,
-                                           std::unordered_map<uint32_t, char> &idx_to_char) {
+static std::tuple<std::string, float> test(LSTM& model,
+    const std::vector<Matrix>& one_hot_inputs,
+    const std::vector<char>& labels,
+    std::unordered_map<uint32_t, char>& idx_to_char)
+{
     assert(one_hot_inputs.size() == labels.size());
     uint32_t accuracy = 0;
     auto probabilities = model.forward(one_hot_inputs);
@@ -104,12 +111,13 @@ static std::tuple<std::string, float> test(LSTM &model,
         }
     }
 
-    float accuracy_perc = accuracy * 100 / one_hot_inputs.size();
+    float accuracy_perc = static_cast<float>(accuracy * 100) / one_hot_inputs.size();
 
     return std::make_tuple(output, accuracy_perc);
 }
 
-int main() {
+int main()
+{
     std::string dataset_path = "../../datasets/shakespeare/tiny_shakespeare_small.txt";
     std::optional<std::string> maybe_dataset = read_to_string(dataset_path);
 
