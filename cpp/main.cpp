@@ -48,7 +48,7 @@ static std::vector<float> train(LSTM &model, const std::vector<Matrix> &one_hot_
     uint32_t data_size = static_cast<uint32_t>(one_hot_inputs.size());
 
     std::vector<float> losses;
-    losses.reserve(data_size);
+    losses.reserve(epochs);
     for (uint32_t epoch = 0; epoch < epochs; ++epoch) {
         std::vector<Matrix> predictions = model.forward(one_hot_inputs);
         uint32_t N = static_cast<uint32_t>(predictions.size());
@@ -162,7 +162,11 @@ int main() {
     uint32_t epochs = 3;
 
     const std::string model_path = "../model/lstm.json";
+#if 0
     LSTM lstm = LSTM::load(model_path);
+#else
+    LSTM lstm = LSTM(input_size, hidden_size, output_size, learning_rate * 10.0f);
+#endif
 
     std::cout << "Training LSTM network..." << std::endl;
 
@@ -172,7 +176,7 @@ int main() {
 
     LSTM lstm2 = LSTM::load(model_path);
 
-    std::tuple output = test(lstm, x_train, y_train_chars, idx_to_char);
+    std::tuple output = test(lstm2, x_train, y_train_chars, idx_to_char);
 
     std::string output_str = std::get<0>(output);
     float accuracy = std::get<1>(output);

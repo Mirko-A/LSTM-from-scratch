@@ -2,6 +2,7 @@
 
 #include <cassert>
 #include <cmath>
+#include <cstdint>
 #include <filesystem>
 #include <fstream>
 #include <iostream>
@@ -12,7 +13,8 @@ static Matrix dtanh(const Matrix &x) {
 }
 
 static Matrix dsigmoid(const Matrix &x) {
-    return x.sigmoid() * (1.0f - x.sigmoid());
+    Matrix x_sig = x.sigmoid();
+    return x_sig * (1.0f - x_sig);
 }
 
 static Matrix init_weights(uint32_t input_size, uint32_t output_size) {
@@ -25,7 +27,9 @@ LSTM::LSTM(const LSTM &other)
     : input_size(other.input_size), hidden_size(other.hidden_size), output_size(other.output_size),
       learning_rate(other.learning_rate), W_f(other.W_f), b_f(other.b_f), W_i(other.W_i),
       b_i(other.b_i), W_c(other.W_c), b_c(other.b_c), W_o(other.W_o), b_o(other.b_o),
-      W_y(other.W_y), b_y(other.b_y) {}
+      W_y(other.W_y), b_y(other.b_y) {
+    // Cache vectors start empty and will be resized in forward()
+}
 
 LSTM::LSTM(uint32_t input_size, uint32_t hidden_size, uint32_t output_size, float learning_rate)
     : input_size(input_size), hidden_size(hidden_size), output_size(output_size),
@@ -45,33 +49,43 @@ LSTM::LSTM(uint32_t input_size, uint32_t hidden_size, uint32_t output_size, floa
     W_y = init_weights(hidden_size, output_size);
     b_y = Matrix::zeros(output_size, 1);
 
-    reset_cache();
+    // Cache vectors start empty and will be resized in forward()
 }
 
-void LSTM::reset_cache() {
+std::vector<Matrix> LSTM::forward(const std::vector<Matrix> &inputs) {
     concat_inputs.clear();
-
     hidden_states.clear();
-    hidden_states[-1] = Matrix::zeros(hidden_size, 1);
     cell_states.clear();
-    cell_states[-1] = Matrix::zeros(hidden_size, 1);
-
     forget_gates.clear();
     input_gates.clear();
     candidate_gates.clear();
     output_gates.clear();
     activation_outputs.clear();
     outputs.clear();
-}
 
-std::vector<Matrix> LSTM::forward(const std::vector<Matrix> &inputs) {
-    reset_cache();
+    std::size_t T = inputs.size();
+
+    // Resize all vectors to T+1 (index 0 for initial state, indices 1 to T for timesteps)
+    concat_inputs.resize(T + 1);
+    hidden_states.resize(T + 1);
+    cell_states.resize(T + 1);
+    forget_gates.resize(T + 1);
+    input_gates.resize(T + 1);
+    candidate_gates.resize(T + 1);
+    output_gates.resize(T + 1);
+    activation_outputs.resize(T + 1);
+    outputs.resize(T + 1);
+
+    // Initialize t=0 (initial) states
+    hidden_states[0] = Matrix::zeros(hidden_size, 1);
+    cell_states[0] = Matrix::zeros(hidden_size, 1);
 
     std::vector<Matrix> ret_outputs;
-    ret_outputs.reserve(inputs.size());
+    ret_outputs.reserve(T);
 
-    for (int32_t t = 0; t < static_cast<int32_t>(inputs.size()); t++) {
-        concat_inputs[t] = Matrix::concatenate(0, {hidden_states[t - 1], inputs[t]});
+    for (std::size_t t = 1; t <= T; t++) {
+        // Access inputs at index t-1 (0-based), store results at index t
+        concat_inputs[t] = Matrix::concatenate(0, {hidden_states[t - 1], inputs[t - 1]});
         forget_gates[t] = W_f.matmul(concat_inputs[t]) + b_f;
         input_gates[t] = W_i.matmul(concat_inputs[t]) + b_i;
         candidate_gates[t] = W_c.matmul(concat_inputs[t]) + b_c;
@@ -105,11 +119,15 @@ void LSTM::backward(const std::vector<Matrix> &labels) {
     Matrix dW_y = Matrix::zeros_like(W_y);
     Matrix db_y = Matrix::zeros_like(b_y);
 
-    Matrix hidden_state = Matrix::zeros_like(hidden_states[0]);
-    Matrix cell_state = Matrix::zeros_like(cell_states[0]);
+    Matrix hidden_state = Matrix::zeros_like(hidden_states[1]);
+    Matrix cell_state = Matrix::zeros_like(cell_states[1]);
 
-    for (int32_t t = static_cast<int32_t>(concat_inputs.size() - 1); t >= 0; t--) {
-        Matrix dL = -(labels[t] / outputs[t]);
+    std::size_t T = labels.size();
+
+    // Iterate backwards from T down to 1 (skip index 0 which is initial state)
+    for (std::size_t t = T; t > 0; t--) {
+        // Access labels at index t-1 (0-based), access cached states at index t
+        Matrix dL = -(labels[t - 1] / outputs[t]);
         Matrix dsoftmax =
             outputs[t] * dL -
             outputs[t].T().matmul(dL).expand(0, outputs[t].shape().first) * outputs[t];
@@ -216,10 +234,7 @@ void LSTM::save(const std::string &model_path) const {
 
 LSTM LSTM::load(const std::string &model_path) {
     std::ifstream ifs(model_path);
-
-    if (!ifs.is_open()) {
-        throw std::runtime_error("Failed to open file for reading");
-    }
+    assert(ifs.is_open());
 
     nlohmann::json json_obj;
     ifs >> json_obj;
@@ -249,5 +264,5 @@ LSTM LSTM::load(const std::string &model_path) {
     lstm.W_y = Matrix(json_obj["W_y"]);
     lstm.b_y = Matrix(json_obj["b_y"]);
 
-    return std::move(lstm);
+    return lstm;
 }

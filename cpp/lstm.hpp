@@ -1,7 +1,5 @@
 #pragma once
 
-#include <unordered_map>
-
 #include "matrix.hpp"
 
 class LSTM {
@@ -21,9 +19,6 @@ class LSTM {
     void backward(const std::vector<Matrix> &labels);
 
     void save(const std::string &model_path) const;
-
-  private:
-    void reset_cache();
 
   private:
     // Hyperparameters
@@ -54,13 +49,13 @@ class LSTM {
     Matrix b_y;
 
     // Network cache
-    std::unordered_map<int32_t, Matrix> concat_inputs;
-    std::unordered_map<int32_t, Matrix> hidden_states;
-    std::unordered_map<int32_t, Matrix> cell_states;
-    std::unordered_map<int32_t, Matrix> forget_gates;
-    std::unordered_map<int32_t, Matrix> input_gates;
-    std::unordered_map<int32_t, Matrix> candidate_gates;
-    std::unordered_map<int32_t, Matrix> output_gates;
-    std::unordered_map<int32_t, Matrix> activation_outputs;
-    std::unordered_map<int32_t, Matrix> outputs;
+    std::vector<Matrix> concat_inputs;
+    std::vector<Matrix> hidden_states;
+    std::vector<Matrix> cell_states;
+    std::vector<Matrix> forget_gates;
+    std::vector<Matrix> input_gates;
+    std::vector<Matrix> candidate_gates;
+    std::vector<Matrix> output_gates;
+    std::vector<Matrix> activation_outputs;
+    std::vector<Matrix> outputs;
 };
