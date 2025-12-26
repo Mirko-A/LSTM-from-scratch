@@ -5,26 +5,27 @@
 #include "matrix.hpp"
 
 class LSTM {
-public:
+  public:
     static LSTM load(const std::string &model_path);
 
-public:
+  public:
     LSTM() = delete;
     LSTM(const LSTM &);
     LSTM &operator=(const LSTM &) = delete;
     LSTM &operator=(LSTM &&) = delete;
 
-    LSTM(uint32_t input_size, uint32_t hidden_size, uint32_t output_size, float learning_rate = 1e-3);
+    LSTM(uint32_t input_size, uint32_t hidden_size, uint32_t output_size,
+         float learning_rate = 1e-3);
 
     std::vector<Matrix> forward(const std::vector<Matrix> &inputs);
     void backward(const std::vector<Matrix> &labels);
 
     void save(const std::string &model_path) const;
 
-private:
+  private:
     void reset_cache();
 
-private:
+  private:
     // Hyperparameters
     uint32_t input_size;
     uint32_t hidden_size;
