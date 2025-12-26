@@ -8,6 +8,8 @@
 #include <iostream>
 #include <nlohmann/json.hpp>
 
+#include "profiler.hpp"
+
 static Matrix dtanh(const Matrix &x) {
     return 1.0f - x.tanh().pow(2.0f);
 }
@@ -53,6 +55,8 @@ LSTM::LSTM(uint32_t input_size, uint32_t hidden_size, uint32_t output_size, floa
 }
 
 std::vector<Matrix> LSTM::forward(const std::vector<Matrix> &inputs) {
+    PROFILE_SCOPE("forward_total");
+
     concat_inputs.clear();
     hidden_states.clear();
     cell_states.clear();
@@ -85,29 +89,48 @@ std::vector<Matrix> LSTM::forward(const std::vector<Matrix> &inputs) {
 
     for (std::size_t t = 1; t <= T; t++) {
         // Access inputs at index t-1 (0-based), store results at index t
-        concat_inputs[t] = Matrix::concatenate(0, {hidden_states[t - 1], inputs[t - 1]});
-        forget_gates[t] = W_f.matmul(concat_inputs[t]) + b_f;
-        input_gates[t] = W_i.matmul(concat_inputs[t]) + b_i;
-        candidate_gates[t] = W_c.matmul(concat_inputs[t]) + b_c;
-        output_gates[t] = W_o.matmul(concat_inputs[t]) + b_o;
+        {
+            PROFILE_SCOPE("forward_concat");
+            concat_inputs[t] = Matrix::concatenate(0, {hidden_states[t - 1], inputs[t - 1]});
+        }
 
-        Matrix fga = forget_gates[t].sigmoid();
-        Matrix iga = input_gates[t].sigmoid();
-        Matrix cga = candidate_gates[t].tanh();
-        Matrix oga = output_gates[t].sigmoid();
+        {
+            PROFILE_SCOPE("forward_gate_matmul");
+            forget_gates[t] = W_f.matmul(concat_inputs[t]) + b_f;
+            input_gates[t] = W_i.matmul(concat_inputs[t]) + b_i;
+            candidate_gates[t] = W_c.matmul(concat_inputs[t]) + b_c;
+            output_gates[t] = W_o.matmul(concat_inputs[t]) + b_o;
+        }
 
-        cell_states[t] = fga * cell_states[t - 1] + iga * cga;
-        hidden_states[t] = oga * cell_states[t].tanh();
+        Matrix fga, iga, cga, oga;
+        {
+            PROFILE_SCOPE("forward_activations");
+            fga = forget_gates[t].sigmoid();
+            iga = input_gates[t].sigmoid();
+            cga = candidate_gates[t].tanh();
+            oga = output_gates[t].sigmoid();
+        }
 
-        Matrix output = (W_y.matmul(hidden_states[t]) + b_y).softmax(0);
-        ret_outputs.push_back(output);
-        outputs[t] = output;
+        {
+            PROFILE_SCOPE("forward_state_update");
+            cell_states[t] = fga * cell_states[t - 1] + iga * cga;
+            hidden_states[t] = oga * cell_states[t].tanh();
+        }
+
+        {
+            PROFILE_SCOPE("forward_output");
+            Matrix output = (W_y.matmul(hidden_states[t]) + b_y).softmax(0);
+            ret_outputs.push_back(output);
+            outputs[t] = output;
+        }
     }
 
     return ret_outputs;
 }
 
 void LSTM::backward(const std::vector<Matrix> &labels) {
+    PROFILE_SCOPE("backward_total");
+
     Matrix dW_f = Matrix::zeros_like(W_f);
     Matrix db_f = Matrix::zeros_like(b_f);
     Matrix dW_i = Matrix::zeros_like(W_i);
@@ -127,68 +150,103 @@ void LSTM::backward(const std::vector<Matrix> &labels) {
     // Iterate backwards from T down to 1 (skip index 0 which is initial state)
     for (std::size_t t = T; t > 0; t--) {
         // Access labels at index t-1 (0-based), access cached states at index t
-        Matrix dL = -(labels[t - 1] / outputs[t]);
-        Matrix dsoftmax =
-            outputs[t] * dL -
-            outputs[t].T().matmul(dL).expand(0, outputs[t].shape().first) * outputs[t];
+        Matrix dL, dsoftmax;
+        {
+            PROFILE_SCOPE("backward_output_grad");
+            dL = -(labels[t - 1] / outputs[t]);
+            dsoftmax = outputs[t] * dL -
+                       outputs[t].T().matmul(dL).expand(0, outputs[t].shape().first) * outputs[t];
+        }
 
-        dW_y = dW_y + dsoftmax.matmul(hidden_states[t].T());
-        db_y = db_y + dsoftmax;
+        {
+            PROFILE_SCOPE("backward_output_weight_grad");
+            dW_y = dW_y + dsoftmax.matmul(hidden_states[t].T());
+            db_y = db_y + dsoftmax;
+        }
 
-        Matrix dhidden_state = W_y.T().matmul(dsoftmax) + hidden_state;
-        Matrix doutput = cell_states[t].tanh() * dhidden_state * dsigmoid(output_gates[t]);
+        Matrix dhidden_state, doutput;
+        {
+            PROFILE_SCOPE("backward_hidden_grad");
+            dhidden_state = W_y.T().matmul(dsoftmax) + hidden_state;
+            doutput = cell_states[t].tanh() * dhidden_state * dsigmoid(output_gates[t]);
+        }
 
-        dW_o = dW_o + doutput.matmul(concat_inputs[t].T());
-        db_o = db_o + doutput;
+        {
+            PROFILE_SCOPE("backward_output_gate_grad");
+            dW_o = dW_o + doutput.matmul(concat_inputs[t].T());
+            db_o = db_o + doutput;
+        }
 
-        Matrix dcell_state =
-            dtanh(cell_states[t]) * output_gates[t].sigmoid() * dhidden_state + cell_state;
+        Matrix dcell_state;
+        {
+            PROFILE_SCOPE("backward_cell_grad");
+            dcell_state =
+                dtanh(cell_states[t]) * output_gates[t].sigmoid() * dhidden_state + cell_state;
+        }
 
-        Matrix dforget = dcell_state * cell_states[t - 1] * dsigmoid(forget_gates[t]);
+        Matrix dforget;
+        {
+            PROFILE_SCOPE("backward_forget_gate_grad");
+            dforget = dcell_state * cell_states[t - 1] * dsigmoid(forget_gates[t]);
+            dW_f = dW_f + dforget.matmul(concat_inputs[t].T());
+            db_f = db_f + dforget;
+        }
 
-        dW_f = dW_f + dforget.matmul(concat_inputs[t].T());
-        db_f = db_f + dforget;
+        Matrix dinput;
+        {
+            PROFILE_SCOPE("backward_input_gate_grad");
+            dinput = dcell_state * candidate_gates[t].tanh() * dsigmoid(input_gates[t]);
+            dW_i = dW_i + dinput.matmul(concat_inputs[t].T());
+            db_i = db_i + dinput;
+        }
 
-        Matrix dinput = dcell_state * candidate_gates[t].tanh() * dsigmoid(input_gates[t]);
+        Matrix dcandidate;
+        {
+            PROFILE_SCOPE("backward_candidate_gate_grad");
+            dcandidate = dcell_state * input_gates[t].sigmoid() * dtanh(candidate_gates[t]);
+            dW_c = dW_c + dcandidate.matmul(concat_inputs[t].T());
+            db_c = db_c + dcandidate;
+        }
 
-        dW_i = dW_i + dinput.matmul(concat_inputs[t].T());
-        db_i = db_i + dinput;
+        {
+            PROFILE_SCOPE("backward_input_grad");
+            Matrix dconcat_inputs = W_f.T().matmul(dforget) + W_i.T().matmul(dinput) +
+                                    W_c.T().matmul(dcandidate) + W_o.T().matmul(doutput);
 
-        Matrix dcandidate = dcell_state * input_gates[t].sigmoid() * dtanh(candidate_gates[t]);
-
-        dW_c = dW_c + dcandidate.matmul(concat_inputs[t].T());
-        db_c = db_c + dcandidate;
-
-        Matrix dconcat_inputs = W_f.T().matmul(dforget) + W_i.T().matmul(dinput) +
-                                W_c.T().matmul(dcandidate) + W_o.T().matmul(doutput);
-
-        uint32_t shrink_size = dconcat_inputs.shape().first - hidden_size;
-        hidden_state = dconcat_inputs.shrink_end(0, shrink_size);
-        cell_state = forget_gates[t].sigmoid() * dcell_state;
+            uint32_t shrink_size = dconcat_inputs.shape().first - hidden_size;
+            hidden_state = dconcat_inputs.shrink_end(0, shrink_size);
+            cell_state = forget_gates[t].sigmoid() * dcell_state;
+        }
     }
 
-    // Clip gradients to prevent exploding
-    dW_f = dW_f.clamp(-1.0f, 1.0f);
-    db_f = db_f.clamp(-1.0f, 1.0f);
-    dW_i = dW_i.clamp(-1.0f, 1.0f);
-    db_i = db_i.clamp(-1.0f, 1.0f);
-    dW_c = dW_c.clamp(-1.0f, 1.0f);
-    db_c = db_c.clamp(-1.0f, 1.0f);
-    dW_o = dW_o.clamp(-1.0f, 1.0f);
-    db_o = db_o.clamp(-1.0f, 1.0f);
-    dW_y = dW_y.clamp(-1.0f, 1.0f);
-    db_y = db_y.clamp(-1.0f, 1.0f);
+    {
+        PROFILE_SCOPE("backward_gradient_clip");
+        // Clip gradients to prevent exploding
+        dW_f = dW_f.clamp(-1.0f, 1.0f);
+        db_f = db_f.clamp(-1.0f, 1.0f);
+        dW_i = dW_i.clamp(-1.0f, 1.0f);
+        db_i = db_i.clamp(-1.0f, 1.0f);
+        dW_c = dW_c.clamp(-1.0f, 1.0f);
+        db_c = db_c.clamp(-1.0f, 1.0f);
+        dW_o = dW_o.clamp(-1.0f, 1.0f);
+        db_o = db_o.clamp(-1.0f, 1.0f);
+        dW_y = dW_y.clamp(-1.0f, 1.0f);
+        db_y = db_y.clamp(-1.0f, 1.0f);
+    }
 
-    W_f = W_f - dW_f * learning_rate;
-    b_f = b_f - db_f * learning_rate;
-    W_i = W_i - dW_i * learning_rate;
-    b_i = b_i - db_i * learning_rate;
-    W_c = W_c - dW_c * learning_rate;
-    b_c = b_c - db_c * learning_rate;
-    W_o = W_o - dW_o * learning_rate;
-    b_o = b_o - db_o * learning_rate;
-    W_y = W_y - dW_y * learning_rate;
-    b_y = b_y - db_y * learning_rate;
+    {
+        PROFILE_SCOPE("backward_weight_update");
+        W_f = W_f - dW_f * learning_rate;
+        b_f = b_f - db_f * learning_rate;
+        W_i = W_i - dW_i * learning_rate;
+        b_i = b_i - db_i * learning_rate;
+        W_c = W_c - dW_c * learning_rate;
+        b_c = b_c - db_c * learning_rate;
+        W_o = W_o - dW_o * learning_rate;
+        b_o = b_o - db_o * learning_rate;
+        W_y = W_y - dW_y * learning_rate;
+        b_y = b_y - db_y * learning_rate;
+    }
 }
 
 void LSTM::save(const std::string &model_path) const {

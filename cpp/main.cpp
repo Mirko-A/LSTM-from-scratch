@@ -7,6 +7,7 @@
 
 #include "lstm.hpp"
 #include "matrix.hpp"
+#include "profiler.hpp"
 
 static std::optional<std::string> read_to_string(const std::string &path) {
     std::ifstream file(path);
@@ -158,22 +159,27 @@ int main() {
     uint32_t input_size = vocab_size + hidden_size;
     uint32_t output_size = vocab_size;
 
-    float learning_rate = 0.0005f;
-    uint32_t epochs = 3;
+    float learning_rate = 0.0001f;
+    uint32_t epochs = 5;
 
     const std::string model_path = "../model/lstm.json";
 #if 0
     LSTM lstm = LSTM::load(model_path);
 #else
-    LSTM lstm = LSTM(input_size, hidden_size, output_size, learning_rate * 10.0f);
+    LSTM lstm = LSTM(input_size, hidden_size, output_size, learning_rate * 100.0f);
 #endif
 
     std::cout << "Training LSTM network..." << std::endl;
 
+    PROFILE_RESET(); // Reset profiler before training
     auto losses = train(lstm, x_train, y_train, vocab_size, epochs);
 
     lstm.save(model_path);
 
+    // Display profiling results
+    PROFILE_REPORT();
+
+#if 0
     LSTM lstm2 = LSTM::load(model_path);
 
     std::tuple output = test(lstm2, x_train, y_train_chars, idx_to_char);
@@ -183,6 +189,7 @@ int main() {
 
     std::cout << "Test accuracy: " << accuracy << "%" << std::endl;
     std::cout << "Output: " << output_str << std::endl;
+#endif
 
     return 0;
 }
