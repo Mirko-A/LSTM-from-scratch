@@ -27,5 +27,6 @@ make
 ./LSTM
 ```
 
-References:
-https://en.wikipedia.org/wiki/Long_short-term_memory
+### References
+
+<https://en.wikipedia.org/wiki/Long_short-term_memory>
