@@ -112,7 +112,7 @@ static std::tuple<std::string, float> test(LSTM &model, const std::vector<Matrix
 }
 
 int main() {
-    std::string dataset_path = "../../datasets/shakespeare/tiny_shakespeare_small.txt";
+    std::string dataset_path = std::string(DATASET_DIR) + "/tiny_shakespeare_small.txt";
     std::optional<std::string> maybe_dataset = read_to_string(dataset_path);
 
     if (!maybe_dataset.has_value()) {
