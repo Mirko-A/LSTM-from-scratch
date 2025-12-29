@@ -34,9 +34,11 @@ cd build || {
 SYSTEMC_HOME=${SYSTEMC_DIR}/systemc-${SYSTEMC_VERSION}-install
 
 cmake \
+    -DCMAKE_CXX_STANDARD=17 \
     -DCMAKE_BUILD_TYPE=Release \
     -DCMAKE_INSTALL_PREFIX=${SYSTEMC_HOME} \
     -DINSTALL_TO_LIB_TARGET_ARCH_DIR=ON \
+    -DINSTALL_LIB_TARGET_ARCH_SYMLINK=ON \
     ..
 
 make
@@ -57,5 +59,9 @@ echo ""
 {
     echo "# SystemC install path"
     echo "export SYSTEMC_HOME=${SYSTEMC_HOME}"
-    echo "export LD_LIBRARY_PATH=${SYSTEMC_HOME}/lib-linux64:${LD_LIBRARY_PATH}"
+    echo "if [ -z \"$LD_LIBRARY_PATH\" ]; then"
+    echo "    export LD_LIBRARY_PATH=${SYSTEMC_HOME}/lib-linux64"
+    echo "else"
+    echo "    export LD_LIBRARY_PATH=${SYSTEMC_HOME}/lib-linux64:$LD_LIBRARY_PATH"
+    echo "fi"
 } >>~/.bashrc
