@@ -12,8 +12,10 @@ set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -g")
 set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O3")
 set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "${CMAKE_CXX_FLAGS_RELWITHDEBINFO} -O2 -g -fno-omit-frame-pointer")
 
-set(DATASET_DIR "${CMAKE_SOURCE_DIR}/../datasets/shakespeare")
+set(DATASET_DIR "${CMAKE_SOURCE_DIR}/../datasets")
 add_definitions(-DDATASET_DIR="${DATASET_DIR}")
+set(MODEL_DIR "${CMAKE_SOURCE_DIR}/../models")
+add_definitions(-DMODEL_DIR="${MODEL_DIR}")
 
 add_subdirectory(third-party/json)
 include_directories(third-party/json/include)

@@ -112,7 +112,7 @@ static std::tuple<std::string, float> test(LSTM &model, const std::vector<Matrix
 }
 
 int main() {
-    std::string dataset_path = std::string(DATASET_DIR) + "/tiny_shakespeare_small.txt";
+    std::string dataset_path = std::string(DATASET_DIR) + "/shakespeare/tiny_shakespeare_small.txt";
     std::optional<std::string> maybe_dataset = read_to_string(dataset_path);
 
     if (!maybe_dataset.has_value()) {
@@ -162,7 +162,7 @@ int main() {
     float learning_rate = 0.0001f;
     uint32_t epochs = 5;
 
-    const std::string model_path = "../model/lstm.json";
+    const std::string model_path = std::string(MODEL_DIR) + "/lstm.json";
 #if 0
     LSTM lstm = LSTM::load(model_path);
 #else
