@@ -1,0 +1,29 @@
+# Build artifacts
+cpp/build/
+cpp/.cache/
+*.o
+*.a
+
+# Git
+.git/
+.gitignore
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.egg-info/
+venv/
+env/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Other
+*.log
+.DS_Store
