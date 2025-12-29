@@ -18,6 +18,9 @@ WORKDIR /lstm-from-scratch
 # Copy entire repository
 COPY . .
 
+# Install SystemC
+RUN chmod +x ./install-systemc.sh && . ./install-systemc.sh
+
 # Create build directory and build the project
 WORKDIR /lstm-from-scratch/cpp/build
 RUN cmake .. && make

@@ -2,8 +2,6 @@
 
 # SystemC installation script
 
-set -e
-
 echo "=========================================="
 echo "SystemC Installation Script"
 echo "=========================================="
@@ -14,15 +12,24 @@ SYSTEMC_DIR="/opt/systemc"
 START_DIR=$(pwd)
 
 mkdir -p ${SYSTEMC_DIR}
-cd ${SYSTEMC_DIR}
+cd ${SYSTEMC_DIR} || {
+    echo "Failed to change directory to ${SYSTEMC_DIR}"
+    exit 1
+}
 
 wget http://accellera.org/images/downloads/standards/systemc/systemc-2.3.3.tar.gz \
     -O systemc-${SYSTEMC_VERSION}.tar.gz
 tar -xzf systemc-${SYSTEMC_VERSION}.tar.gz
 
-cd systemc-${SYSTEMC_VERSION}
+cd systemc-${SYSTEMC_VERSION} || {
+    echo "Failed to change directory to systemc-${SYSTEMC_VERSION}"
+    exit 1
+}
 mkdir build
-cd build
+cd build || {
+    echo "Failed to change directory to build"
+    exit 1
+}
 
 SYSTEMC_HOME=${SYSTEMC_DIR}/systemc-${SYSTEMC_VERSION}-install
 
@@ -35,7 +42,10 @@ cmake \
 make
 make install
 
-cd "${START_DIR}"
+cd "${START_DIR}" || {
+    echo "Failed to return to starting directory ${START_DIR}"
+    exit 1
+}
 
 echo ""
 echo "=========================================="
@@ -44,9 +54,8 @@ echo "Installed at: ${SYSTEMC_DIR}/systemc-${SYSTEMC_VERSION}-install"
 echo "=========================================="
 echo ""
 
-export SYSTEMC_HOME=${SYSTEMC_HOME}
-if [ -z "$LD_LIBRARY_PATH" ]; then
-    export LD_LIBRARY_PATH=${SYSTEMC_HOME}/lib-linux64
-else
-    export LD_LIBRARY_PATH=${SYSTEMC_HOME}/lib-linux64:${LD_LIBRARY_PATH}
-fi
+{
+    echo "# SystemC install path"
+    echo "export SYSTEMC_HOME=${SYSTEMC_HOME}"
+    echo "export LD_LIBRARY_PATH=${SYSTEMC_HOME}/lib-linux64:${LD_LIBRARY_PATH}"
+} >>~/.bashrc
