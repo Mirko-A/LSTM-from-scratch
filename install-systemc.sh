@@ -17,9 +17,10 @@ cd ${SYSTEMC_DIR} || {
     exit 1
 }
 
-wget http://accellera.org/images/downloads/standards/systemc/systemc-2.3.3.tar.gz \
+wget http://accellera.org/images/downloads/standards/systemc/systemc-${SYSTEMC_VERSION}.tar.gz \
     -O systemc-${SYSTEMC_VERSION}.tar.gz
 tar -xzf systemc-${SYSTEMC_VERSION}.tar.gz
+rm systemc-${SYSTEMC_VERSION}.tar.gz
 
 cd systemc-${SYSTEMC_VERSION} || {
     echo "Failed to change directory to systemc-${SYSTEMC_VERSION}"
