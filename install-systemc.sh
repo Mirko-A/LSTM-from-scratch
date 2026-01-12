@@ -65,4 +65,4 @@ echo ""
     echo "else"
     echo "    export LD_LIBRARY_PATH=${SYSTEMC_HOME}/lib-linux64:$LD_LIBRARY_PATH"
     echo "fi"
-} >>~/.bashrc
+} >>"$HOME"/.bashrc
